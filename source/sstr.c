@@ -19,6 +19,12 @@ struct s_str s_str_n(const char *str, unsigned int len) {
     return s;
 }
 
+void s_str_free(struct s_str *sstr) {
+    free(sstr->str);
+    sstr->str = NULL;
+    sstr->len = 0;
+}
+
 struct s_str s_str_concat(const struct s_str *s1, const struct s_str *s2) {
     struct s_str s;
     s.len = s1->len + s2->len;
