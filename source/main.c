@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "sakura.h"
+#include "sap.h"
 
 #ifndef SAKURA_VERSION
 #define SAKURA_VERSION "UNKNOWN"
@@ -35,10 +36,10 @@ int main(int argc, const char **argv) {
         return 1;
     }
 
-    SakuraState *state = sakura_createState();
+    SakuraState *S = sakura_createState();
 
-    // begin REPL
+    sakuraL_loadfile(S, filename);
 
-    sakura_destroyState(state);
+    sakura_destroyState(S);
     return 0;
 }
