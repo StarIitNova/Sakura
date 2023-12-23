@@ -9,6 +9,16 @@
 
 typedef unsigned short SakuraFlag;
 
+#define SAKURA_FLAG_LEXER 0
+#define SAKURA_FLAG_PARSER 1
+#define SAKURA_FLAG_RUNTIME 2
+#define SAKURA_FLAG_ENDED 3
+
+#define SAKURA_EFLAG_NONE 0
+#define SAKURA_EFLAG_SYNTAX 1
+#define SAKURA_EFLAG_RUNTIME 2
+#define SAKURA_EFLAG_FATAL 3
+
 enum SakuraValueType { SAKURA_INT, SAKURA_FLOAT, SAKURA_STRING };
 
 struct SakuraValue {
