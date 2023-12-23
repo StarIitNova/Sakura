@@ -8,8 +8,12 @@ struct s_str {
 #define S_NULL_STR                                                                                                     \
     { NULL, 0 }
 
+#define SI_NULL_STR (struct s_str) S_NULL_STR
+
 #define S_C_STR(c)                                                                                                     \
     { c, sizeof(c) - 1 }
+
+#define SI_C_STR(c) (struct s_str) S_C_STR(c)
 
 #define s_str(s) s_str_new(s)
 

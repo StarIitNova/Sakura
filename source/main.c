@@ -2,7 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "sstr.h"
+#include "sakura.h"
+
+#ifndef SAKURA_VERSION
+#define SAKURA_VERSION "UNKNOWN"
+#endif
 
 int main(int argc, const char **argv) {
     if (argc <= 1) {
@@ -31,22 +35,10 @@ int main(int argc, const char **argv) {
         return 1;
     }
 
-    FILE *file = fopen(argv[1], "r");
-    if (!file) {
-        printf("Failed to open file: %s\n", argv[1]);
-        return 1;
-    }
+    SakuraState *state = sakura_createState();
 
-    struct s_str s = S_NULL_STR;
-    char temp[1024];
-    while (fgets(temp, 1024, file)) {
-        struct s_str ns = s_str_concat_c(&s, temp);
-        free(s.str);
-        s = ns;
-    }
+    // begin REPL
 
-    printf("%.*s", s.len, s.str);
-
-    free(s.str);
+    sakura_destroyState(state);
     return 0;
 }
