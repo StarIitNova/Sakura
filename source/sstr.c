@@ -19,6 +19,14 @@ struct s_str s_str_n(const char *str, unsigned int len) {
     return s;
 }
 
+struct s_str s_str_copy(const struct s_str *sstr) {
+    struct s_str s;
+    s.len = sstr->len;
+    s.str = malloc(s.len);
+    memcpy(s.str, sstr->str, s.len);
+    return s;
+}
+
 void s_str_free(struct s_str *sstr) {
     free(sstr->str);
     sstr->str = NULL;
