@@ -1,5 +1,7 @@
 #include "sap.h"
 
+#include "assembler.h"
+#include "disasm.h"
 #include "filesystem.h"
 #include "parser.h"
 
@@ -18,9 +20,11 @@ void sakuraL_loadfile(SakuraState *S, const char *file) {
 void sakuraL_loadstring(SakuraState *S, struct s_str *source) {
     struct TokenStack *tokens = sakuraY_analyze(S, source);
     struct NodeStack *nodes = sakuraY_parse(S, tokens);
+    struct SakuraAssembly *assembly = sakuraY_assemble(S, nodes);
 
-    // vm operations
+    sakuraX_writeDisasm(assembly, "test.sa");
 
+    sakuraX_freeAssembly(assembly);
     sakuraX_freeNodeStack(nodes);
     sakuraX_freeTokStack(tokens);
 }

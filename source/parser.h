@@ -69,6 +69,9 @@ struct Node {
     struct Node *left;
     struct Node *right;
     struct Token *token;
+
+    int leftLocation;
+    int rightLocation;
 };
 
 struct TokenStack {
