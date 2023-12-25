@@ -56,7 +56,7 @@ void SakuraV_visitNumber(SakuraState *S, struct SakuraAssembly *assembly, struct
 
     // store the value in the constant pool
     int index = sakuraX_pushKNumber(assembly, value);
-    // load the value into the next register
+    // load the value into the next register (note this is actually the stack, this value is NOT used)
     size_t reg = assembly->registers++;
     SakuraAssembly_push3(assembly, SAKURA_LOADK, reg, index);
     // store the register location in the node

@@ -19,7 +19,7 @@ struct SakuraAssembly {
 
 // Stack Manipulation
 #define SAKURA_MOVE 0    // mov a, b -> moves the value of b to a
-#define SAKURA_LOADK 1   // loadk a, b -> loads the constant at index b into a
+#define SAKURA_LOADK 1   // loadk a -> loads the constant at index a into the stack
 #define SAKURA_LOADNIL 2 // loadnil a, b -> loads nil into a, a + 1, ..., a + b
 #define SAKURA_POP 17    // pop a -> pops a values from the stack
 
