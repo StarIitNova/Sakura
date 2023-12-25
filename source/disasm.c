@@ -5,9 +5,6 @@
 char *sakuraX_readTVal(TValue *val) {
     char *allocVal = malloc(1024);
     switch (val->tt) {
-    case SAKURA_TNUMINT:
-        sprintf(allocVal, "%d", val->value.i);
-        break;
     case SAKURA_TNUMFLT:
         sprintf(allocVal, "%f", val->value.n);
         break;
