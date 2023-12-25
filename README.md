@@ -1,5 +1,7 @@
 # Sakura
 
+> Open sourced programming language written in C
+
 An open sourced programming language created as a learning tool to better understand the world of binary interpreted languages. The goal of Sakura is to create a language that can both interpret its base language (the one you should use) and an assembly version of it, which is the binary instructions but also slightly more readable. The basis/primary inspiration is Lua, a simplistic programming language that actually has a lot going on internally (try luac -l [script-name]), including a binary format that can be interpreted as a sort of assembly.
 
 ## Roadmap
@@ -9,6 +11,18 @@ An open sourced programming language created as a learning tool to better unders
 - [ ] Self hosted (written in itself)
 - [ ] Optimized
 - [ ] Fully compiled version of the assembly?
+
+## Installation
+
+Sakura is currently incomplete, so there are no built releases. If you wish to use Sakura in it's current state, you can clone the repository and build it using make.
+
+## Usage Examples
+
+Coming soon
+
+## Documentation
+
+Coming Soon
 
 ## Contributing
 
