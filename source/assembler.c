@@ -55,7 +55,7 @@ void SakuraV_visitNumber(SakuraState *S, struct SakuraAssembly *assembly, struct
     free(tokStr);
 
     // store the value in the constant pool
-    int index = sakuraX_pushKFloat(assembly, value);
+    int index = sakuraX_pushKNumber(assembly, value);
     // load the value into the next register
     size_t reg = assembly->registers++;
     SakuraAssembly_push3(assembly, SAKURA_LOADK, reg, index);
@@ -81,6 +81,7 @@ void sakuraV_visitNode(SakuraState *S, struct SakuraAssembly *assembly, struct N
 }
 
 struct SakuraAssembly *sakuraY_assemble(SakuraState *S, struct NodeStack *nodes) {
+    S->currentState = SAKURA_FLAG_ASSEMBLING;
     struct SakuraAssembly *assembly = SakuraAssembly();
 
     for (size_t i = 0; i < nodes->size; i++) {
@@ -101,16 +102,22 @@ struct SakuraAssembly *SakuraAssembly() {
 
     assembly->pool.size = 0;
     assembly->pool.capacity = 8;
-    assembly->pool.constants = malloc(sizeof(TValue) * assembly->pool.capacity);
+    assembly->pool.constants = malloc(assembly->pool.capacity * sizeof(TValue));
     return assembly;
 }
 
 void sakuraX_freeAssembly(struct SakuraAssembly *assembly) {
-    free(assembly->pool.constants);
-    assembly->pool.constants = NULL;
-    assembly->pool.size = 0;
-    free(assembly->instructions);
-    assembly->instructions = NULL;
+    if (assembly->pool.constants) {
+        free(assembly->pool.constants);
+        assembly->pool.constants = NULL;
+        assembly->pool.size = 0;
+    }
+
+    if (assembly->instructions) {
+        free(assembly->instructions);
+        assembly->instructions = NULL;
+    }
+
     free(assembly);
 }
 
@@ -137,18 +144,7 @@ void SakuraAssembly_push4(struct SakuraAssembly *assembly, int instruction, int 
     SakuraAssembly_push2(assembly, b, c);
 }
 
-int sakuraX_pushKInt(struct SakuraAssembly *assembly, int64_t value) {
-    if (assembly->pool.size >= assembly->pool.capacity) {
-        assembly->pool.capacity *= 2;
-        assembly->pool.constants = realloc(assembly->pool.constants, assembly->pool.capacity);
-    }
-
-    size_t idx = assembly->pool.size;
-    assembly->pool.constants[assembly->pool.size++] = (TValue){.value.i = value, .tt = SAKURA_TNUMINT};
-    return -(idx + 1);
-}
-
-int sakuraX_pushKFloat(struct SakuraAssembly *assembly, double value) {
+int sakuraX_pushKNumber(struct SakuraAssembly *assembly, double value) {
     if (assembly->pool.size >= assembly->pool.capacity) {
         assembly->pool.capacity *= 2;
         assembly->pool.constants = realloc(assembly->pool.constants, assembly->pool.capacity);

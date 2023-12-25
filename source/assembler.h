@@ -6,27 +6,7 @@
 #include "parser.h"
 #include "sakura.h"
 
-#define SAKURA_TNUMFLT 0 // float tag
-#define SAKURA_TNUMINT 1 // integer tag
-#define SAKURA_TSTR 2    // string tag
-
-// TValue represents a tagged value
-typedef struct {
-    int tt; // type tag
-    union {
-        double n;       // TNUMFLT
-        struct s_str s; // TNUMINT
-        int64_t i;      // TSTR
-    } value;
-} TValue;
-
 // constant pool structure
-typedef struct {
-    TValue *constants; // contents of the constant pool
-    size_t size;
-    size_t capacity;
-} SakuraConstantPool;
-
 struct SakuraAssembly {
     int *instructions;
     SakuraConstantPool pool;
@@ -101,6 +81,5 @@ void SakuraAssembly_push2(struct SakuraAssembly *assembly, int instruction, int 
 void SakuraAssembly_push3(struct SakuraAssembly *assembly, int instruction, int a, int b);
 void SakuraAssembly_push4(struct SakuraAssembly *assembly, int instruction, int a, int b, int c);
 
-int sakuraX_pushKInt(struct SakuraAssembly *assembly, int64_t value);
-int sakuraX_pushKFloat(struct SakuraAssembly *assembly, double value);
+int sakuraX_pushKNumber(struct SakuraAssembly *assembly, double value);
 int sakuraX_pushKString(struct SakuraAssembly *assembly, const struct s_str *value);
