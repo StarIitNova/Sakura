@@ -26,8 +26,8 @@ void sakuraX_writeDisasm(struct SakuraAssembly *assembler, const char *filename)
         switch (assembler->instructions[i]) {
         case SAKURA_LOADK:
             char *allocVal = sakuraX_readTVal(&assembler->pool.constants[-assembler->instructions[i + 2] - 1]);
-            printf("    %d\t(%d)\t\tLOADK\t\t%d, %d ; %s\n", idx, i, assembler->instructions[i + 1],
-                   assembler->instructions[i + 2], allocVal);
+            printf("    %d\t(%d)\t\tLOADK\t\t%d ; %s into stack pos %d\n", idx, i, assembler->instructions[i + 2],
+                   allocVal, assembler->instructions[i + 1]);
             free(allocVal);
             i += 2;
             break;
