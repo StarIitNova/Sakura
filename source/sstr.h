@@ -22,6 +22,8 @@ struct s_str s_str_n(const char *str, unsigned int len);
 struct s_str s_str_copy(const struct s_str *sstr);
 void s_str_free(struct s_str *sstr);
 struct s_str s_str_concat(const struct s_str *sstr1, const struct s_str *sstr2);
+struct s_str s_str_concat_d(const struct s_str *sstr1, double value);
+struct s_str s_str_concat_dd(double value, const struct s_str *sstr1);
 struct s_str s_str_concat_c(const struct s_str *sstr, const char *str);
 struct s_str s_str_concat_s(const char *str, const struct s_str *sstr2);
 struct s_str s_str_concat_cc(const char *str, const char *str2);

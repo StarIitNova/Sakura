@@ -1,5 +1,6 @@
 #include "sstr.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -66,6 +67,56 @@ struct s_str s_str_concat_cc(const char *s1, const char *s2) {
     s.str = malloc(s.len);
     memcpy(s.str, s1, strlen(s1));
     memcpy(s.str + strlen(s1), s2, strlen(s2));
+    return s;
+}
+
+struct s_str s_str_concat_d(const struct s_str *sstr1, double value) {
+    char output[50];
+    sprintf(output, "%f", value);
+
+    size_t len = strlen(output);
+    for (size_t i = len - 1; i >= 0; i--) {
+        if (output[i] == '0')
+            output[i] = '\0';
+        else
+            break;
+    }
+
+    len = strlen(output);
+    if (output[len - 1] == '.')
+        output[len - 1] = '\0';
+    len = strlen(output);
+
+    struct s_str s;
+    s.len = sstr1->len + len;
+    s.str = malloc(s.len * sizeof(char));
+    memcpy(s.str, sstr1->str, sstr1->len);
+    memcpy(s.str + sstr1->len, output, len);
+    return s;
+}
+
+struct s_str s_str_concat_dd(double value, const struct s_str *sstr1) {
+    char output[50];
+    sprintf(output, "%f", value);
+
+    size_t len = strlen(output);
+    for (size_t i = len - 1; i >= 0; i--) {
+        if (output[i] == '0')
+            output[i] = '\0';
+        else
+            break;
+    }
+
+    len = strlen(output);
+    if (output[len - 1] == '.')
+        output[len - 1] = '\0';
+    len = strlen(output);
+
+    struct s_str s;
+    s.len = len + sstr1->len;
+    s.str = malloc(s.len * sizeof(char));
+    memcpy(s.str, output, len);
+    memcpy(s.str + len, sstr1->str, sstr1->len);
     return s;
 }
 
