@@ -89,6 +89,11 @@ void sakuraX_TVMapInsert(struct TVMap *map, const struct s_str *key, TValue valu
     map->size++;
 }
 
+int sakuraX_TVMapGetIndex(struct TVMap *map, const struct s_str *key) {
+    size_t idx = hash(key->str, key->len, map->capacity);
+    return map->pairs[idx].init == 1 ? idx : -1;
+}
+
 TValue *sakuraX_TVMapGet(struct TVMap *map, const struct s_str *key) {
     size_t idx = hash(key->str, key->len, map->capacity);
     return map->pairs[idx].init == 1 ? &map->pairs[idx].value : NULL;

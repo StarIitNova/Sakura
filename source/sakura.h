@@ -24,6 +24,7 @@ typedef unsigned short SakuraFlag;
 #define SAKURA_TNUMFLT 0 // float tag
 #define SAKURA_TSTR 2    // string tag
 #define SAKURA_TCFUNC 3  // C function tag
+#define SAKURA_TFUNC 5   // function tag
 #define SAKURA_TNIL 4    // nil tag
 
 struct SakuraState;
@@ -90,6 +91,7 @@ void sakura_destroyState(SakuraState *state);
 void sakuraX_initializeTVMap(struct TVMap *map, size_t initCapacity);
 void sakuraX_resizeTVMap(struct TVMap *map, size_t newCapacity);
 void sakuraX_TVMapInsert(struct TVMap *map, const struct s_str *key, TValue value);
+int sakuraX_TVMapGetIndex(struct TVMap *map, const struct s_str *key);
 TValue *sakuraX_TVMapGet(struct TVMap *map, const struct s_str *key);
 TValue *sakuraX_TVMapGet_c(struct TVMap *map, const char *key);
 void sakuraX_destroyTVMap(struct TVMap *map);
