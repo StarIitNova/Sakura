@@ -12,7 +12,22 @@ int sakuraS_print(SakuraState *S) {
 
     for (int i = 0; i < args; i++) {
         if (sakura_isNumber(S)) {
-            printf("%f    ", sakura_popNumber(S));
+            char output[50];
+            sprintf(output, "%f", sakura_popNumber(S));
+
+            size_t len = strlen(output);
+            for (size_t i = len - 1; i >= 0; i--) {
+                if (output[i] == '0')
+                    output[i] = '\0';
+                else
+                    break;
+            }
+
+            len = strlen(output);
+            if (output[len - 1] == '.')
+                output[len - 1] = '\0';
+
+            printf("%s    ", output);
         } else if (sakura_isString(S)) {
             struct s_str val = sakura_popString(S);
             printf("%.*s    ", val.str, val.len);
@@ -40,16 +55,14 @@ void sakuraL_loadfile(SakuraState *S, const char *file) {
 }
 
 void sakuraL_loadstring(SakuraState *S, struct s_str *source) {
+    sakuraL_loadStdlib(S);
+
     struct TokenStack *tokens = sakuraY_analyze(S, source);
     struct NodeStack *nodes = sakuraY_parse(S, tokens);
     struct SakuraAssembly *assembly = sakuraY_assemble(S, nodes);
 
-    sakuraL_loadStdlib(S);
-
-    // sakuraX_writeDisasm(assembly, "test.sa");
+    // sakuraX_writeDisasm(S, assembly, "test.sa");
     sakuraX_interpret(S, assembly);
-
-    TValue *val = sakuraX_TVMapGet_c(&S->globals, "print");
 
     sakuraX_freeAssembly(assembly);
     sakuraX_freeNodeStack(nodes);
