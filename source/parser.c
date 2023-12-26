@@ -179,6 +179,10 @@ struct TokenStack *sakuraY_analyze(SakuraState *S, struct s_str *source) {
                 tok->type = SAKURA_TOKEN_SLASH;
             else if (source->str[i] == ';')
                 tok->type = SAKURA_TOKEN_SEMICOLON;
+            else if (source->str[i] == '(')
+                tok->type = SAKURA_TOKEN_LEFT_PAREN;
+            else if (source->str[i] == ')')
+                tok->type = SAKURA_TOKEN_RIGHT_PAREN;
             else
                 printf("Error: unexpected character '%c'\n", source->str[i]);
 
@@ -276,6 +280,78 @@ struct Node *sakuraX_parseFactor(SakuraState *S, struct TokenStack *tokens) {
 
         sakuraY_freeToken(token);
         return node;
+    } else if (token->type == SAKURA_TOKEN_IDENTIFIER) {
+        struct Token *nextToken = sakuraX_peekTokStack(tokens, 1);
+        if (nextToken != NULL && nextToken->type == SAKURA_TOKEN_LEFT_PAREN) {
+            struct Node *node = malloc(sizeof(struct Node));
+            if (node == NULL) {
+                printf("Error: could not allocate memory for node\n");
+                return NULL;
+            }
+
+            node->type = SAKURA_NODE_CALL;
+            node->args = NULL;
+            node->argCount = 0;
+            node->token = token;
+
+            sakuraX_popTokStack(tokens);
+            int hasRparen = 0;
+            while (1) {
+                struct Node *arg = sakuraX_parseExpression(S, tokens);
+                if (arg != NULL) {
+                    node->args = realloc(node->args, (node->argCount + 1) * sizeof(struct Node *));
+                    node->args[node->argCount++] = arg;
+
+                    struct Token *comma = sakuraX_popTokStack(tokens);
+                    if (comma != NULL && comma->type == SAKURA_TOKEN_COMMA) {
+                        sakuraY_freeToken(comma);
+                        continue;
+                    } else {
+                        if (comma != NULL && comma->type == SAKURA_TOKEN_RIGHT_PAREN) {
+                            hasRparen = 1;
+                            sakuraY_freeToken(comma);
+                            break;
+                        } else {
+                            printf("Error: expected ',' or ')'\n");
+                            sakuraY_freeNode(node);
+                            sakuraY_freeToken(comma);
+                            return NULL;
+                        }
+                    }
+
+                    break;
+                } else {
+                    printf("Error: could not parse argument\n");
+                    sakuraY_freeNode(node);
+                    return NULL;
+                }
+            }
+
+            if (!hasRparen) {
+                struct Token *rightParen = sakuraX_popTokStack(tokens);
+                if (rightParen == NULL || rightParen->type != SAKURA_TOKEN_RIGHT_PAREN) {
+                    printf("Error: expected ')'\n");
+                    sakuraY_freeNode(node);
+                    sakuraY_freeToken(rightParen);
+                    return NULL;
+                }
+            }
+
+            return node;
+        } else {
+            struct Node *node = malloc(sizeof(struct Node));
+            if (node == NULL) {
+                printf("Error: could not allocate memory for node\n");
+                return NULL;
+            }
+
+            node->type = SAKURA_TOKEN_IDENTIFIER;
+            node->left = NULL;
+            node->right = NULL;
+            node->token = token;
+
+            return node;
+        }
     } else {
         printf("Error: unexpected token '%.*s'\n", (int)token->length, token->start);
         sakuraY_freeToken(token);

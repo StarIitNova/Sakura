@@ -24,8 +24,8 @@ struct SakuraAssembly {
 #define SAKURA_POP 17    // pop a -> pops a values from the stack
 
 // Global Variable Operations
-#define SAKURA_GETGLOBAL 3 // getglobal a, b -> loads the global at index b into a
-#define SAKURA_SETGLOBAL 4 // setglobal a, b -> sets the global at index b to a
+#define SAKURA_GETGLOBAL 3 // getglobal a -> loads the global at index a into the stack
+#define SAKURA_SETGLOBAL 4 // setglobal a, b -> sets the global at index a to b
 
 // Table Operations
 #define SAKURA_GETTABLE 5 // gettable a, b, c -> loads the value at index c in the table at index b into a

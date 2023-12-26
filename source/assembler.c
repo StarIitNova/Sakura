@@ -46,7 +46,7 @@ void sakuraV_visitBinary(SakuraState *S, struct SakuraAssembly *assembly, struct
     }
 }
 
-void SakuraV_visitNumber(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node) {
+void sakuraV_visitNumber(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node) {
     // convert the string in the token to a double
     char *tokStr = (char *)malloc(node->token->length + 1);
     memcpy(tokStr, node->token->start, node->token->length);
@@ -63,6 +63,40 @@ void SakuraV_visitNumber(SakuraState *S, struct SakuraAssembly *assembly, struct
     node->leftLocation = reg;
 }
 
+void sakuraV_visitCall(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node) {
+    // get the function name as an s_str
+    struct s_str name;
+    name.str = (char *)node->token->start;
+    name.len = node->token->length;
+
+    // get the function from the global table
+    TValue *func = sakuraX_TVMapGet(&S->globals, &name);
+    int idx = sakuraX_TVMapGetIndex(&S->globals, &name);
+
+    // check if the function exists
+    if (idx == -1) {
+        printf("Error: function '%.*s' does not exist\n", name.len, name.str);
+        return;
+    }
+
+    // check if the function is a function
+    if (func->tt != SAKURA_TCFUNC && func->tt != SAKURA_TFUNC) {
+        printf("Error: '%.*s' is not a function\n", name.len, name.str);
+        return;
+    }
+
+    // bytecode to call the function
+    size_t reg = assembly->registers++;
+    SakuraAssembly_push3(assembly, SAKURA_GETGLOBAL, reg, idx);
+
+    // bytecode to push arguments onto the stack
+    for (size_t i = 0; i < node->argCount; i++) {
+        sakuraV_visitNode(S, assembly, node->args[i]);
+    }
+
+    SakuraAssembly_push3(assembly, SAKURA_CALL, reg, node->argCount);
+}
+
 void sakuraV_visitNode(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node) {
     switch (node->type) {
     case SAKURA_NODE_UNARY_OPERATION:
@@ -72,7 +106,10 @@ void sakuraV_visitNode(SakuraState *S, struct SakuraAssembly *assembly, struct N
         sakuraV_visitBinary(S, assembly, node);
         break;
     case SAKURA_TOKEN_NUMBER:
-        SakuraV_visitNumber(S, assembly, node);
+        sakuraV_visitNumber(S, assembly, node);
+        break;
+    case SAKURA_NODE_CALL:
+        sakuraV_visitCall(S, assembly, node);
         break;
     default:
         printf("Error: unknown node type '%d'\n", node->type);

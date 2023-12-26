@@ -53,6 +53,7 @@ enum TokenType {
     // Node Types
     SAKURA_NODE_UNARY_OPERATION,
     SAKURA_NODE_BINARY_OPERATION,
+    SAKURA_NODE_CALL,
 
     // Misc
     SAKURA_TOKEN_SENTINEL
@@ -69,6 +70,9 @@ struct Node {
     struct Node *left;
     struct Node *right;
     struct Token *token;
+
+    struct Node **args;
+    size_t argCount;
 
     int leftLocation;
     int rightLocation;

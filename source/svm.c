@@ -1,5 +1,7 @@
 #include "svm.h"
 
+#include <stdlib.h>
+
 #include "sakura.h"
 
 void sakuraX_interpret(SakuraState *S, struct SakuraAssembly *assembly) {
@@ -14,6 +16,11 @@ void sakuraX_interpret(SakuraState *S, struct SakuraAssembly *assembly) {
         case SAKURA_LOADK:
             // ignore the first argument (store reg) as it is NOT needed
             sakuraY_push(S, assembly->pool.constants[-instructions[i + 2] - 1]);
+            i += 2;
+            break;
+        case SAKURA_GETGLOBAL:
+            // ignore the first argument (store reg) as it is NOT needed
+            sakuraY_push(S, S->globals.pairs[instructions[i + 2]].value);
             i += 2;
             break;
         case SAKURA_ADD: {
@@ -62,6 +69,23 @@ void sakuraX_interpret(SakuraState *S, struct SakuraAssembly *assembly) {
                 printf("Error: unknown multiplication operands: %d\n", val.tt);
             }
             i += 3;
+            break;
+        }
+        case SAKURA_CALL: {
+            int fnLoc = instructions[i + 1];
+            int argc = instructions[i + 2];
+            TValue *fn = &S->stack[fnLoc];
+            if (fn->tt == SAKURA_TCFUNC) {
+                sakuraY_push(S, sakuraY_makeTNumber(argc));
+                int ret = fn->value.cfn(S);
+                if (ret != 0) {
+                    printf("Error: C function returned non-zero (%d) value\n", ret);
+                    exit(1);
+                }
+            } else if (fn->tt == SAKURA_TFUNC) {
+                printf("Error: function calls are not implemented yet\n");
+            }
+            i += 2;
             break;
         }
         default:
