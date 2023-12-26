@@ -18,7 +18,11 @@ Sakura is currently incomplete, so there are no built releases. If you wish to u
 
 ## Usage Examples
 
-Coming soon
+Coming soon... but heres this:
+
+```
+print(1 + 2 * 3);
+```
 
 ## Documentation
 
