@@ -541,19 +541,6 @@ struct NodeStack *sakuraY_parse(SakuraState *S, struct TokenStack *tokens) {
 
         if (node != NULL) {
             sakuraX_pushNodeStack(stack, node);
-
-            if (node->type != SAKURA_NODE_IF && node->type != SAKURA_NODE_BLOCK) {
-                struct Token *token = sakuraX_popTokStack(tokens);
-                if (token->type != SAKURA_TOKEN_SEMICOLON) {
-                    printf("Error: expected semicolon\n");
-                    sakuraY_freeToken(token);
-                    sakuraX_freeNodeStack(stack);
-                    stack = NULL;
-                    break;
-                }
-
-                sakuraY_freeToken(token);
-            }
         } else {
             printf("Error: could not parse expression\n");
             sakuraX_freeNodeStack(stack);
