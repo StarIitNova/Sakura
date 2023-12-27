@@ -468,7 +468,7 @@ struct Node *sakuraX_parseExpressionEntry(SakuraState *S, struct TokenStack *tok
 struct Node *sakuraX_parseBlocks(SakuraState *S, struct TokenStack *tokens) {
     // if statements
     struct Token *token = sakuraX_peekTokStack(tokens, 1);
-    if (token->type == SAKURA_TOKEN_IDENTIFIER && s_str_cmp_c2(s_str_n(token->start, token->length), "if") == 0) {
+    if (token->type == SAKURA_TOKEN_IDENTIFIER && str_cmp_cl(token->start, token->length, "if") == 0) {
         struct Node *node = sakuraX_makeNode(SAKURA_NODE_IF);
 
         sakuraY_freeToken(sakuraX_popTokStack(tokens));
@@ -492,7 +492,7 @@ struct Node *sakuraX_parseBlocks(SakuraState *S, struct TokenStack *tokens) {
 
         struct Token *elseToken = sakuraX_peekTokStack(tokens, 1);
         if (elseToken != NULL && elseToken->type == SAKURA_TOKEN_IDENTIFIER &&
-            s_str_cmp_c2(s_str_n(elseToken->start, elseToken->length), "else") == 0) {
+            str_cmp_cl(elseToken->start, elseToken->length, "else") == 0) {
             sakuraY_freeToken(sakuraX_popTokStack(tokens));
             struct Node *elseBlock = sakuraX_parseBlocks(S, tokens);
             if (elseBlock == NULL) {
@@ -593,6 +593,12 @@ void sakuraY_freeNode(struct Node *node) {
             }
         }
         free(node->args);
+        node->args = NULL;
+    }
+
+    if (node->elseBlock != NULL) {
+        sakuraY_freeNode(node->elseBlock);
+        node->elseBlock = NULL;
     }
 
     free(node);

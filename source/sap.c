@@ -42,26 +42,27 @@ int sakuraS_print(SakuraState *S) {
 
 void sakuraL_loadStdlib(SakuraState *S) { sakura_register(S, "print", sakuraS_print); }
 
-void sakuraL_loadfile(SakuraState *S, const char *file) {
+void sakuraL_loadfile(SakuraState *S, const char *file, int showDisasm) {
     struct s_str source = readfile(file);
     if (source.str == NULL) {
         printf("Error: could not read file %s\n", file);
         return;
     }
 
-    sakuraL_loadstring(S, &source);
+    sakuraL_loadstring(S, &source, showDisasm);
 
     s_str_free(&source);
 }
 
-void sakuraL_loadstring(SakuraState *S, struct s_str *source) {
+void sakuraL_loadstring(SakuraState *S, struct s_str *source, int showDisasm) {
     sakuraL_loadStdlib(S);
 
     struct TokenStack *tokens = sakuraY_analyze(S, source);
     struct NodeStack *nodes = sakuraY_parse(S, tokens);
     struct SakuraAssembly *assembly = sakuraY_assemble(S, nodes);
 
-    sakuraX_writeDisasm(S, assembly, "test.sa");
+    if (showDisasm >= 1)
+        sakuraX_writeDisasm(S, assembly, "test.sa", showDisasm);
     sakuraX_interpret(S, assembly);
 
     sakuraX_freeAssembly(assembly);
@@ -69,9 +70,9 @@ void sakuraL_loadstring(SakuraState *S, struct s_str *source) {
     sakuraX_freeTokStack(tokens);
 }
 
-void sakuraL_loadstring_c(SakuraState *S, const char *str) {
+void sakuraL_loadstring_c(SakuraState *S, const char *str, int showDisasm) {
     struct s_str source = s_str(str);
-    sakuraL_loadstring(S, &source);
+    sakuraL_loadstring(S, &source, showDisasm);
     s_str_free(&source);
 }
 

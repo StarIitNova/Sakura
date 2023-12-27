@@ -142,11 +142,19 @@ void sakuraX_interpret(SakuraState *S, struct SakuraAssembly *assembly) {
             int argc = instructions[i + 2];
             TValue *fn = &S->stack[fnLoc];
             if (fn->tt == SAKURA_TCFUNC) {
+                int stackidx = S->stackIndex;
                 sakuraY_push(S, sakuraY_makeTNumber(argc));
                 int ret = fn->value.cfn(S);
                 if (ret != 0) {
                     printf("Error: C function returned non-zero (%d) value\n", ret);
                     exit(1);
+                }
+
+                if (stackidx - S->stackIndex != argc) {
+                    printf("Warning: C function did not pop all arguments off the stack (%d removed, %d expected)\n",
+                           stackidx - S->stackIndex, argc);
+                } else {
+                    sakuraY_pop(S); // pop the function
                 }
             } else if (fn->tt == SAKURA_TFUNC) {
                 printf("Error: function calls are not implemented yet\n");

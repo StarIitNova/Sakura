@@ -148,6 +148,7 @@ void sakuraV_visitCall(SakuraState *S, struct SakuraAssembly *assembly, struct N
     }
 
     SakuraAssembly_push3(assembly, SAKURA_CALL, reg, node->argCount);
+    assembly->registers -= (node->argCount + 1);
 
     if (reg >= assembly->highestRegister) {
         assembly->highestRegister = reg;
