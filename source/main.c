@@ -51,6 +51,7 @@ int main(int argc, const char **argv) {
         return 1;
     }
 
+    int disasmMode = 0;
     const char *filename = 0;
     for (int i = 1; i < argc; i++) {
         if (argv[i][0] == '-') {
@@ -60,6 +61,12 @@ int main(int argc, const char **argv) {
             } else if (strcmp(argv[i], "-v") == 0) {
                 printf("Sakura version %s\n", SAKURA_VERSION);
                 return 1;
+            } else if (strcmp(argv[i], "-l") == 0) {
+                disasmMode |= 1;
+            } else if (strcmp(argv[i], "--bytecode") == 0) {
+                disasmMode |= 1 << 1;
+            } else if (strcmp(argv[i], "--kdump") == 0) {
+                disasmMode |= 1 << 2;
             }
         } else {
             filename = argv[i];
@@ -74,10 +81,9 @@ int main(int argc, const char **argv) {
 
     SakuraState *S = sakura_createState();
 
-    sakuraL_loadfile(S, filename);
+    sakuraL_loadfile(S, filename, disasmMode);
 
     sakura_destroyState(S);
 
-    printf("Sakura exited normally with code 0\n");
     return 0;
 }
