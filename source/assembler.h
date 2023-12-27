@@ -13,6 +13,9 @@ struct SakuraAssembly {
     size_t size;
     size_t capacity;
     size_t registers;
+
+    size_t highestRegister;
+    size_t functionsLoaded;
 };
 
 // assembly instructions

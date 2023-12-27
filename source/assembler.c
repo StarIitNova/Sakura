@@ -18,31 +18,79 @@ void sakuraV_visitUnary(SakuraState *S, struct SakuraAssembly *assembly, struct 
 }
 
 void sakuraV_visitBinary(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node) {
-    // visit the operands
-    sakuraV_visitNode(S, assembly, node->left);
-    sakuraV_visitNode(S, assembly, node->right);
+    // visit the operands, swapped order is so the less than/greater than system works properly
+    if (node->token->type == SAKURA_TOKEN_GREATER || node->token->type == SAKURA_TOKEN_GREATER_EQUAL) {
+        sakuraV_visitNode(S, assembly, node->right);
+        sakuraV_visitNode(S, assembly, node->left);
+    } else {
+        sakuraV_visitNode(S, assembly, node->left);
+        sakuraV_visitNode(S, assembly, node->right);
+    }
+
+    assembly->registers -= 2;
 
     node->leftLocation = assembly->registers++;
 
     // determine the specific binary operation
-    if (node->token->type == SAKURA_TOKEN_PLUS) {
+    switch (node->token->type) {
+    case SAKURA_TOKEN_PLUS:
         // add the values, storing the result in the left register
         SakuraAssembly_push4(assembly, SAKURA_ADD, node->leftLocation, node->left->leftLocation,
                              node->right->leftLocation);
-    } else if (node->token->type == SAKURA_TOKEN_MINUS) {
+        break;
+    case SAKURA_TOKEN_MINUS:
         // subtract the values, storing the result in the left register
         SakuraAssembly_push4(assembly, SAKURA_SUB, node->leftLocation, node->left->leftLocation,
                              node->right->leftLocation);
-    } else if (node->token->type == SAKURA_TOKEN_STAR) {
+        break;
+    case SAKURA_TOKEN_STAR:
         // multiply the values, storing the result in the left register
         SakuraAssembly_push4(assembly, SAKURA_MUL, node->leftLocation, node->left->leftLocation,
                              node->right->leftLocation);
-    } else if (node->token->type == SAKURA_TOKEN_SLASH) {
+        break;
+    case SAKURA_TOKEN_SLASH:
         // divide the values, storing the result in the left register
         SakuraAssembly_push4(assembly, SAKURA_DIV, node->leftLocation, node->left->leftLocation,
                              node->right->leftLocation);
-    } else {
-        printf("Error: unknown binary operation '%d'\n", node->token->type);
+        break;
+    case SAKURA_TOKEN_CARET:
+        // power the values, storing the result in the left register
+        SakuraAssembly_push4(assembly, SAKURA_POW, node->leftLocation, node->left->leftLocation,
+                             node->right->leftLocation);
+        break;
+    case SAKURA_TOKEN_PERCENT:
+        // mod the values, storing the result in the left register
+        SakuraAssembly_push4(assembly, SAKURA_MOD, node->leftLocation, node->left->leftLocation,
+                             node->right->leftLocation);
+        break;
+    case SAKURA_TOKEN_EQUAL_EQUAL:
+        // check if the values are equal, storing the result in the left register
+        SakuraAssembly_push4(assembly, SAKURA_EQ, node->leftLocation, node->left->leftLocation,
+                             node->right->leftLocation);
+        break;
+    case SAKURA_TOKEN_BANG_EQUAL:
+        // check if the values are not equal, storing the result in the left register
+        SakuraAssembly_push4(assembly, SAKURA_EQ, node->leftLocation, node->left->leftLocation,
+                             node->right->leftLocation);
+        // invert the result, storing it in the left register
+        SakuraAssembly_push3(assembly, SAKURA_NOT, node->leftLocation, node->leftLocation);
+        break;
+    case SAKURA_TOKEN_LESS:
+    case SAKURA_TOKEN_GREATER:
+        // check if the left value is less than the right value, storing the result in the left register
+        SakuraAssembly_push4(assembly, SAKURA_LT, node->leftLocation, node->left->leftLocation,
+                             node->right->leftLocation);
+        break;
+    case SAKURA_TOKEN_LESS_EQUAL:
+    case SAKURA_TOKEN_GREATER_EQUAL:
+        // check if the left value is less than or equal to the right value, storing the result in the left register
+        SakuraAssembly_push4(assembly, SAKURA_LE, node->leftLocation, node->left->leftLocation,
+                             node->right->leftLocation);
+        break;
+    default:
+        printf("Error: unknown binary operation '%d' in node '%d' ('%.*s' = ?)\n", node->token->type, node->type,
+               node->token->length, node->token->start);
+        break;
     }
 }
 
@@ -61,6 +109,10 @@ void sakuraV_visitNumber(SakuraState *S, struct SakuraAssembly *assembly, struct
     SakuraAssembly_push3(assembly, SAKURA_LOADK, reg, index);
     // store the register location in the node
     node->leftLocation = reg;
+
+    if (reg >= assembly->highestRegister) {
+        assembly->highestRegister = reg;
+    }
 }
 
 void sakuraV_visitCall(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node) {
@@ -87,6 +139,7 @@ void sakuraV_visitCall(SakuraState *S, struct SakuraAssembly *assembly, struct N
 
     // bytecode to call the function
     size_t reg = assembly->registers++;
+    assembly->functionsLoaded++;
     SakuraAssembly_push3(assembly, SAKURA_GETGLOBAL, reg, idx);
 
     // bytecode to push arguments onto the stack
@@ -95,6 +148,48 @@ void sakuraV_visitCall(SakuraState *S, struct SakuraAssembly *assembly, struct N
     }
 
     SakuraAssembly_push3(assembly, SAKURA_CALL, reg, node->argCount);
+
+    if (reg >= assembly->highestRegister) {
+        assembly->highestRegister = reg;
+    }
+}
+
+void sakuraV_visitIf(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node) {
+    // visit the condition
+    sakuraV_visitNode(S, assembly, node->left);
+
+    // bytecode to jump to the else block if the condition is false
+    size_t jump = assembly->size;
+    SakuraAssembly_push3(assembly, SAKURA_JMPIF, 0, node->left->leftLocation);
+    assembly->registers--;
+
+    // visit the if block
+    sakuraV_visitNode(S, assembly, node->right);
+
+    // check if theres an else block
+    if (node->right != NULL) {
+        // bytecode to jump to the end of the if statement
+        size_t end = assembly->size;
+        SakuraAssembly_push2(assembly, SAKURA_JMP, 0);
+
+        // set the jump location
+        assembly->instructions[jump + 1] = assembly->size;
+
+        // visit the else block
+        sakuraV_visitNode(S, assembly, node->elseBlock);
+
+        // set the end location
+        assembly->instructions[end + 1] = assembly->size;
+    } else {
+        // set the jump location
+        assembly->instructions[jump + 1] = assembly->size;
+    }
+}
+
+void sakuraV_visitBlock(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node) {
+    for (size_t i = 0; i < node->argCount; i++) {
+        sakuraV_visitNode(S, assembly, node->args[i]);
+    }
 }
 
 void sakuraV_visitNode(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node) {
@@ -111,6 +206,12 @@ void sakuraV_visitNode(SakuraState *S, struct SakuraAssembly *assembly, struct N
     case SAKURA_NODE_CALL:
         sakuraV_visitCall(S, assembly, node);
         break;
+    case SAKURA_NODE_IF:
+        sakuraV_visitIf(S, assembly, node);
+        break;
+    case SAKURA_NODE_BLOCK:
+        sakuraV_visitBlock(S, assembly, node);
+        break;
     default:
         printf("Error: unknown node type '%d'\n", node->type);
         break;
@@ -126,16 +227,21 @@ struct SakuraAssembly *sakuraY_assemble(SakuraState *S, struct NodeStack *nodes)
         sakuraV_visitNode(S, assembly, node);
     }
 
+    SakuraAssembly_push3(assembly, SAKURA_RETURN, 0, 0);
+
     return assembly;
 }
 
 struct SakuraAssembly *SakuraAssembly() {
     struct SakuraAssembly *assembly = malloc(sizeof(struct SakuraAssembly));
-    assembly->instructions = malloc(sizeof(int) * 64);
+    assembly->instructions = malloc(64 * sizeof(int));
     assembly->size = 0;
     assembly->capacity = 64;
 
     assembly->registers = 0;
+
+    assembly->highestRegister = 0;
+    assembly->functionsLoaded = 0;
 
     assembly->pool.size = 0;
     assembly->pool.capacity = 8;
@@ -161,7 +267,7 @@ void sakuraX_freeAssembly(struct SakuraAssembly *assembly) {
 void SakuraAssembly_push(struct SakuraAssembly *assembly, int instruction) {
     if (assembly->size >= assembly->capacity) {
         assembly->capacity *= 2;
-        assembly->instructions = realloc(assembly->instructions, assembly->capacity);
+        assembly->instructions = realloc(assembly->instructions, assembly->capacity * sizeof(int));
     }
     assembly->instructions[assembly->size++] = instruction;
 }
@@ -184,7 +290,7 @@ void SakuraAssembly_push4(struct SakuraAssembly *assembly, int instruction, int 
 int sakuraX_pushKNumber(struct SakuraAssembly *assembly, double value) {
     if (assembly->pool.size >= assembly->pool.capacity) {
         assembly->pool.capacity *= 2;
-        assembly->pool.constants = realloc(assembly->pool.constants, assembly->pool.capacity);
+        assembly->pool.constants = realloc(assembly->pool.constants, assembly->pool.capacity * sizeof(TValue));
     }
 
     size_t idx = assembly->pool.size;
@@ -195,7 +301,7 @@ int sakuraX_pushKNumber(struct SakuraAssembly *assembly, double value) {
 int sakuraX_pushKString(struct SakuraAssembly *assembly, const struct s_str *value) {
     if (assembly->pool.size >= assembly->pool.capacity) {
         assembly->pool.capacity *= 2;
-        assembly->pool.constants = realloc(assembly->pool.constants, assembly->pool.capacity);
+        assembly->pool.constants = realloc(assembly->pool.constants, assembly->pool.capacity * sizeof(TValue));
     }
 
     size_t idx = assembly->pool.size;
