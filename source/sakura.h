@@ -110,8 +110,8 @@ void sakura_setGlobal(SakuraState *S, const struct s_str *name);
 
 void sakuraY_push(SakuraState *S, TValue val);
 TValue sakuraY_pop(SakuraState *S);
-TValue *sakuraY_peak(SakuraState *S);
-int sakura_peak(SakuraState *S);
+TValue *sakuraY_peek(SakuraState *S);
+int sakura_peek(SakuraState *S);
 
 int sakura_isNumber(SakuraState *S);
 int sakura_isString(SakuraState *S);

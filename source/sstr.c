@@ -132,3 +132,12 @@ int s_str_cmp_c(const struct s_str *s1, const char *s2) {
         return s1->len - len;
     return memcmp(s1->str, s2, len);
 }
+
+int s_str_cmp_c2(struct s_str s1, const char *s2) {
+    int len = strlen(s2);
+    if (s1.len != len)
+        return s1.len - len;
+    int s = memcmp(s1.str, s2, len);
+    s_str_free(&s1);
+    return s;
+}

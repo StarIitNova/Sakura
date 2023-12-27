@@ -69,6 +69,8 @@ void sakuraX_initializeTVMap(struct TVMap *map, size_t initCapacity) {
 
     for (size_t i = 0; i < initCapacity; i++) {
         map->pairs[i].init = 0;
+        map->pairs[i].key.str = NULL;
+        map->pairs[i].key.len = 0;
     }
 }
 
@@ -163,7 +165,7 @@ TValue sakuraY_pop(SakuraState *S) {
     return S->stack[--S->stackIndex];
 }
 
-TValue *sakuraY_peak(SakuraState *S) {
+TValue *sakuraY_peek(SakuraState *S) {
     if (S->stackIndex <= 0) {
         printf("Error: stack underflow\n");
         exit(1);
@@ -172,7 +174,7 @@ TValue *sakuraY_peak(SakuraState *S) {
     return &(S->stack[S->stackIndex - 1]);
 }
 
-int sakura_peak(SakuraState *S) {
+int sakura_peek(SakuraState *S) {
     if (S->stackIndex <= 0) {
         printf("Error: stack underflow\n");
         exit(1);
@@ -181,8 +183,8 @@ int sakura_peak(SakuraState *S) {
     return (int)(S->stack[S->stackIndex - 1].value.n);
 }
 
-int sakura_isNumber(SakuraState *S) { return sakuraY_peak(S)->tt == SAKURA_TNUMFLT; }
-int sakura_isString(SakuraState *S) { return sakuraY_peak(S)->tt == SAKURA_TSTR; }
+int sakura_isNumber(SakuraState *S) { return sakuraY_peek(S)->tt == SAKURA_TNUMFLT; }
+int sakura_isString(SakuraState *S) { return sakuraY_peek(S)->tt == SAKURA_TSTR; }
 
 double sakura_popNumber(SakuraState *S) {
     TValue val = sakuraY_pop(S);

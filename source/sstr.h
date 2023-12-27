@@ -29,3 +29,4 @@ struct s_str s_str_concat_s(const char *str, const struct s_str *sstr2);
 struct s_str s_str_concat_cc(const char *str, const char *str2);
 int s_str_cmp(const struct s_str *sstr1, const struct s_str *sstr2);
 int s_str_cmp_c(const struct s_str *sstr1, const char *str);
+int s_str_cmp_c2(struct s_str s1, const char *s2);
