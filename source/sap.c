@@ -7,7 +7,7 @@
 #include "svm.h"
 
 int sakuraS_print(SakuraState *S) {
-    int args = sakura_peak(S);
+    int args = sakura_peek(S);
     sakuraY_pop(S);
 
     for (int i = 0; i < args; i++) {
@@ -32,7 +32,7 @@ int sakuraS_print(SakuraState *S) {
             struct s_str val = sakura_popString(S);
             printf("%.*s    ", val.str, val.len);
         } else {
-            printf("?    ");
+            printf("[%p]    ", sakuraY_peek(S));
         }
     }
 
@@ -61,7 +61,7 @@ void sakuraL_loadstring(SakuraState *S, struct s_str *source) {
     struct NodeStack *nodes = sakuraY_parse(S, tokens);
     struct SakuraAssembly *assembly = sakuraY_assemble(S, nodes);
 
-    // sakuraX_writeDisasm(S, assembly, "test.sa");
+    sakuraX_writeDisasm(S, assembly, "test.sa");
     sakuraX_interpret(S, assembly);
 
     sakuraX_freeAssembly(assembly);
