@@ -59,15 +59,15 @@ void sakuraL_loadstring(SakuraState *S, struct s_str *source, int showDisasm) {
 
     struct TokenStack *tokens = sakuraY_analyze(S, source);
     struct NodeStack *nodes = sakuraY_parse(S, tokens);
+    sakuraX_freeTokStack(tokens); // may need to move this to after assembly
     struct SakuraAssembly *assembly = sakuraY_assemble(S, nodes);
+    sakuraX_freeNodeStack(nodes);
 
     if (showDisasm >= 1)
         sakuraX_writeDisasm(S, assembly, "test.sa", showDisasm);
     sakuraX_interpret(S, assembly);
 
     sakuraX_freeAssembly(assembly);
-    sakuraX_freeNodeStack(nodes);
-    sakuraX_freeTokStack(tokens);
 }
 
 void sakuraL_loadstring_c(SakuraState *S, const char *str, int showDisasm) {
