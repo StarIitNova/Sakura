@@ -95,15 +95,8 @@ void sakuraV_visitBinary(SakuraState *S, struct SakuraAssembly *assembly, struct
 }
 
 void sakuraV_visitNumber(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node) {
-    // convert the string in the token to a double
-    char *tokStr = (char *)malloc(node->token->length + 1);
-    memcpy(tokStr, node->token->start, node->token->length);
-    tokStr[node->token->length] = '\0';
-    double value = strtod(tokStr, NULL);
-    free(tokStr);
-
     // store the value in the constant pool
-    int index = sakuraX_pushKNumber(assembly, value);
+    int index = sakuraX_pushKNumber(assembly, node->storageValue);
     // load the value into the next register (note this is actually the stack, this value is NOT used)
     size_t reg = assembly->registers++;
     SakuraAssembly_push3(assembly, SAKURA_LOADK, reg, index);

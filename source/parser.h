@@ -74,6 +74,8 @@ struct Node {
 
     struct Node *elseBlock;
 
+    double storageValue;
+
     int leftLocation;
     int rightLocation;
 };

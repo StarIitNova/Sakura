@@ -1,7 +1,9 @@
 #include "parser.h"
 
 #include <ctype.h>
+#include <math.h>
 #include <stdlib.h>
+#include <string.h>
 
 struct Node *sakuraX_makeNode(enum TokenType type) {
     struct Node *node = malloc(sizeof(struct Node));
@@ -292,6 +294,17 @@ struct TokenStack *sakuraY_analyze(SakuraState *S, struct s_str *source) {
 }
 
 struct Node *sakuraX_parseUnary(SakuraState *S, struct Token *token, struct Node *left) {
+    if (left->type == SAKURA_TOKEN_NUMBER) {
+        if (token->type == SAKURA_TOKEN_MINUS) {
+            left->storageValue = -left->storageValue;
+        } else if (token->type == SAKURA_TOKEN_PLUS) {
+            ; // do nothing
+        } else {
+            printf("Error: unknown unary operation '%d' on number\n", token->type);
+        }
+        return left;
+    }
+
     struct Node *node = sakuraX_makeNode(SAKURA_NODE_UNARY_OPERATION);
 
     node->left = left;
@@ -319,6 +332,67 @@ struct Node *sakuraX_binaryOperation(SakuraState *S, struct TokenStack *tokens, 
                 }
 
                 struct Node *right = fn(S, tokens);
+
+                int countPass = 0;
+
+                if (left->type == SAKURA_TOKEN_NUMBER && right->type == SAKURA_TOKEN_NUMBER) {
+                    int exitV = 0;
+                    switch (token->type) {
+                    case SAKURA_TOKEN_PLUS:
+                        left->storageValue += right->storageValue;
+                        break;
+                    case SAKURA_TOKEN_MINUS:
+                        left->storageValue -= right->storageValue;
+                        break;
+                    case SAKURA_TOKEN_STAR:
+                        left->storageValue *= right->storageValue;
+                        break;
+                    case SAKURA_TOKEN_SLASH:
+                        left->storageValue /= right->storageValue;
+                        break;
+                    case SAKURA_TOKEN_CARET:
+                        left->storageValue = pow(left->storageValue, right->storageValue);
+                        break;
+                    case SAKURA_TOKEN_PERCENT:
+                        left->storageValue = fmod(left->storageValue, right->storageValue);
+                        break;
+                    case SAKURA_TOKEN_LESS:
+                        left->storageValue = left->storageValue < right->storageValue ? 1 : 0;
+                        break;
+                    case SAKURA_TOKEN_LESS_EQUAL:
+                        left->storageValue = left->storageValue <= right->storageValue ? 1 : 0;
+                        break;
+                    case SAKURA_TOKEN_GREATER:
+                        left->storageValue = left->storageValue > right->storageValue ? 1 : 0;
+                        break;
+                    case SAKURA_TOKEN_GREATER_EQUAL:
+                        left->storageValue = left->storageValue >= right->storageValue ? 1 : 0;
+                        break;
+                    case SAKURA_TOKEN_EQUAL_EQUAL:
+                        left->storageValue = left->storageValue == right->storageValue ? 1 : 0;
+                        break;
+                    case SAKURA_TOKEN_BANG_EQUAL:
+                        left->storageValue = left->storageValue != right->storageValue ? 1 : 0;
+                        break;
+                    case SAKURA_TOKEN_AND:
+                        left->storageValue = left->storageValue == 1 && right->storageValue == 1 ? 1 : 0;
+                        break;
+                    case SAKURA_TOKEN_OR:
+                        left->storageValue = left->storageValue == 1 || right->storageValue == 1 ? 1 : 0;
+                        break;
+                    default:
+                        exitV = 1;
+                        break;
+                    }
+
+                    if (exitV == 0) {
+                        sakuraY_freeToken(token);
+                        sakuraY_freeNode(right);
+                        hasType = 1;
+                        break;
+                    }
+                }
+
                 struct Node *newNode = sakuraX_makeNode(SAKURA_NODE_BINARY_OPERATION);
 
                 newNode->left = left;
@@ -344,6 +418,12 @@ struct Node *sakuraX_parseFactor(SakuraState *S, struct TokenStack *tokens) {
         struct Node *node = sakuraX_makeNode(SAKURA_TOKEN_NUMBER);
 
         node->token = token;
+
+        char *tokStr = (char *)malloc(token->length + 1);
+        memcpy(tokStr, token->start, token->length);
+        tokStr[token->length] = '\0';
+        node->storageValue = strtod(tokStr, NULL);
+        free(tokStr);
 
         return node;
     } else if (token->type == SAKURA_TOKEN_PLUS || token->type == SAKURA_TOKEN_MINUS) {
