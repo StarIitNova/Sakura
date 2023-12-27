@@ -19,20 +19,7 @@ char *sakuraX_readTVal(TValue *val) {
     return allocVal;
 }
 
-void sakuraX_writeDisasm(SakuraState *S, struct SakuraAssembly *assembler, const char *filename) {
-    printf("Raw Instructions:\n");
-    for (size_t i = 0; i < assembler->size; i++) {
-        printf("%d ", assembler->instructions[i]);
-    }
-    printf("\n");
-    // printf("Constants Dump (%p through %p):\n", assembler->pool.constants,
-    //        assembler->pool.constants + assembler->pool.size);
-    // for (size_t i = 0; i < assembler->pool.size; i++) {
-    //     char *allocVal = sakuraX_readTVal(&assembler->pool.constants[i]);
-    //     printf("  [%d] %s\n", i, allocVal);
-    //     free(allocVal);
-    // }
-
+void sakuraX_writeDisasm(SakuraState *S, struct SakuraAssembly *assembler, const char *filename, int mode) {
     printf("main <%s:0,0> (%d instructions, %d bytes) UNOPTIMIZED\n", filename, assembler->size,
            assembler->size * sizeof(int));
     printf("%d registers, %d variables, %d constants, %d functions\n", assembler->highestRegister, 0,
@@ -149,6 +136,24 @@ void sakuraX_writeDisasm(SakuraState *S, struct SakuraAssembly *assembler, const
     }
 
     free(cachedGlobals);
+
+    if (mode & 1 << 1) {
+        printf("Raw Instructions:\n");
+        for (size_t i = 0; i < assembler->size; i++) {
+            printf("%d ", assembler->instructions[i]);
+        }
+        printf("\n");
+    }
+
+    if (mode & 1 << 2) {
+        printf("Constants Dump (%p through %p):\n", assembler->pool.constants,
+               assembler->pool.constants + assembler->pool.size);
+        for (size_t i = 0; i < assembler->pool.size; i++) {
+            char *allocVal = sakuraX_readTVal(&assembler->pool.constants[i]);
+            printf("  [%d] %s\n", i, allocVal);
+            free(allocVal);
+        }
+    }
 
     printf("=================\n");
 }
