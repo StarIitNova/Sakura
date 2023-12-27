@@ -11,6 +11,11 @@ ifeq ($(OS),Windows_NT)
 	APP_VERSION := $(shell type $(VERSION_FILE))
 else
 	APP_VERSION := $(shell cat $(VERSION_FILE))
+
+	UNAME_S := $(shell uname -s)
+	ifeq ($(UNAME_S),Linux)
+		CFLAGS += -lm -ldl
+	endif
 endif
 
 all: $(TARGET)
