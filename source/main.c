@@ -9,7 +9,43 @@
 #define SAKURA_VERSION "UNKNOWN"
 #endif
 
+#ifdef _WIN32
+#include <Windows.h>
+
+LONG WINAPI CriticalExceptionHandler(EXCEPTION_POINTERS *ExceptionInfo) {
+    if (ExceptionInfo->ExceptionRecord->ExceptionCode == STATUS_HEAP_CORRUPTION) {
+        printf("FATAL: Critical error c0000374 detected (heap corruption)\n");
+        printf("    Run the program with sanitization enabled (add -fsanitize=address to the compiler flags)\n");
+        printf("    Alternatively, run it through valgrind.\n");
+        exit(1);
+    } else if (ExceptionInfo->ExceptionRecord->ExceptionCode == STATUS_BREAKPOINT) {
+        printf("FATAL: Critical error 80000003 detected (SIGTRAP/breakpoint)\n");
+        exit(1);
+    }
+
+    printf("Windows exception: %08X\n", ExceptionInfo->ExceptionRecord->ExceptionCode);
+
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+#endif // _WIN32
+
+#include <signal.h>
+
+void onSignal(int signum) {
+    if (signum == SIGSEGV) {
+        printf("Segmentation fault (core dumped)\n");
+        printf("    Load the program into gdb (gdb sakura then run test.sa)\n");
+        exit(1);
+    }
+}
+
 int main(int argc, const char **argv) {
+    signal(SIGSEGV, onSignal);
+
+#ifdef _WIN32
+    AddVectoredExceptionHandler(1, CriticalExceptionHandler);
+#endif // _WIN32
+
     if (argc <= 1) {
         printf("Usage: %s <file>\n", argv[0]);
         return 1;
@@ -41,5 +77,7 @@ int main(int argc, const char **argv) {
     sakuraL_loadfile(S, filename);
 
     sakura_destroyState(S);
+
+    printf("Sakura exited normally with code 0\n");
     return 0;
 }
