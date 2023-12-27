@@ -107,7 +107,9 @@ TValue *sakuraX_TVMapGet_c(struct TVMap *map, const char *key) {
 }
 
 void sakuraX_destroyTVMap(struct TVMap *map) {
-    for (size_t i = 0; i < map->size; i++) {
+    for (size_t i = 0; i < map->capacity; i++) {
+        if (map->pairs[i].init == 0)
+            continue;
         s_str_free(&map->pairs[i].key);
         if (map->pairs[i].value.tt == SAKURA_TSTR) {
             s_str_free(&map->pairs[i].value.value.s);

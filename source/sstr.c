@@ -141,3 +141,10 @@ int s_str_cmp_c2(struct s_str s1, const char *s2) {
     s_str_free(&s1);
     return s;
 }
+
+int str_cmp_cl(const char *s1, unsigned int len, const char *s2) {
+    int len2 = strlen(s2);
+    if (len != len2)
+        return len - len2;
+    return memcmp(s1, s2, len);
+}
