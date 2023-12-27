@@ -3,6 +3,31 @@
 #include <ctype.h>
 #include <stdlib.h>
 
+struct Node *sakuraX_makeNode(enum TokenType type) {
+    struct Node *node = malloc(sizeof(struct Node));
+    if (node == NULL) {
+        printf("Error: could not allocate memory for node\n");
+        return NULL;
+    }
+
+    node->type = type;
+    node->left = NULL;
+    node->right = NULL;
+    node->token = NULL;
+    node->args = NULL;
+    node->argCount = 0;
+    node->elseBlock = NULL;
+    node->leftLocation = -11111111;
+    node->rightLocation = -11111111;
+
+    return node;
+}
+
+void sakuraDEBUG_dumpNode(struct Node *node) {
+    printf("Node %p: T%d L%p R%p Tk%p A%p AC%zu EB%p LL%d RL%d\n", node, node->type, node->left, node->right,
+           node->token, node->args, node->argCount, node->elseBlock, node->leftLocation, node->rightLocation);
+}
+
 struct TokenStack *sakuraX_newTokStack() {
     struct TokenStack *stack = malloc(sizeof(struct TokenStack));
     stack->tokens = malloc(16 * sizeof(struct Token *));
@@ -35,7 +60,7 @@ void sakuraX_pushTokStack(struct TokenStack *stack, struct Token *token) {
 
 struct Token *sakuraX_popTokStack(struct TokenStack *stack) {
     if (stack->size == 0) {
-        printf("Error: stack underflow\n");
+        printf("Error: stack underflow while popping token\n");
         return NULL;
     }
 
@@ -53,7 +78,7 @@ struct Token *sakuraX_peekTokStack(struct TokenStack *stack, int silent) {
         return stack->tokens[0];
     } else {
         if (!silent)
-            printf("Error: stack underflow\n");
+            printf("Error: stack underflow while peeking token\n");
         return NULL;
     }
 }
@@ -92,7 +117,7 @@ void sakuraX_pushNodeStack(struct NodeStack *stack, struct Node *node) {
 
 struct Node *sakuraX_popNodeStack(struct NodeStack *stack) {
     if (stack->size == 0) {
-        printf("Error: stack underflow\n");
+        printf("Error: stack underflow while popping node\n");
         return NULL;
     }
 
@@ -110,7 +135,7 @@ struct Node *sakuraX_peekNodeStack(struct NodeStack *stack, int silent) {
         return stack->nodes[0];
     } else {
         if (!silent)
-            printf("Error: stack underflow\n");
+            printf("Error: stack underflow while peeking node\n");
         return NULL;
     }
 }
@@ -169,22 +194,95 @@ struct TokenStack *sakuraY_analyze(SakuraState *S, struct s_str *source) {
             tok->start = source->str + i;
             tok->length = 1;
 
-            if (source->str[i] == '+')
+            switch (source->str[i]) {
+            case '+':
                 tok->type = SAKURA_TOKEN_PLUS;
-            else if (source->str[i] == '-')
+                break;
+            case '-':
                 tok->type = SAKURA_TOKEN_MINUS;
-            else if (source->str[i] == '*')
+                break;
+            case '*':
                 tok->type = SAKURA_TOKEN_STAR;
-            else if (source->str[i] == '/')
+                break;
+            case '/':
                 tok->type = SAKURA_TOKEN_SLASH;
-            else if (source->str[i] == ';')
+                break;
+            case '^':
+                tok->type = SAKURA_TOKEN_CARET;
+                break;
+            case '%':
+                tok->type = SAKURA_TOKEN_PERCENT;
+                break;
+            case ';':
                 tok->type = SAKURA_TOKEN_SEMICOLON;
-            else if (source->str[i] == '(')
+                break;
+            case ',':
+                tok->type == SAKURA_TOKEN_COMMA;
+                break;
+            case '.':
+                tok->type == SAKURA_TOKEN_DOT;
+                break;
+            case '(':
                 tok->type = SAKURA_TOKEN_LEFT_PAREN;
-            else if (source->str[i] == ')')
+                break;
+            case ')':
                 tok->type = SAKURA_TOKEN_RIGHT_PAREN;
-            else
+                break;
+            case '{':
+                tok->type = SAKURA_TOKEN_LEFT_BRACE;
+                break;
+            case '}':
+                tok->type = SAKURA_TOKEN_RIGHT_BRACE;
+                break;
+            case '#':
+                tok->type = SAKURA_TOKEN_HASHTAG;
+                break;
+            case '!':
+                if (i + 1 < source->len && source->str[i + 1] == '=') {
+                    tok->type = SAKURA_TOKEN_BANG_EQUAL;
+                    break;
+                }
+                tok->type = SAKURA_TOKEN_BANG;
+                break;
+            case '=':
+                if (i + 1 < source->len && source->str[i + 1] == '=') {
+                    tok->type = SAKURA_TOKEN_EQUAL_EQUAL;
+                    break;
+                }
+                tok->type = SAKURA_TOKEN_EQUAL;
+                break;
+            case '>':
+                if (i + 1 < source->len && source->str[i + 1] == '=') {
+                    tok->type = SAKURA_TOKEN_GREATER_EQUAL;
+                    break;
+                }
+                tok->type = SAKURA_TOKEN_GREATER;
+                break;
+            case '<':
+                if (i + 1 < source->len && source->str[i + 1] == '=') {
+                    tok->type = SAKURA_TOKEN_LESS_EQUAL;
+                    break;
+                }
+                tok->type = SAKURA_TOKEN_LESS;
+                break;
+            case '&':
+                if (i + 1 < source->len && source->str[i + 1] == '&') {
+                    tok->type = SAKURA_TOKEN_AND;
+                    break;
+                }
+                printf("Error: unexpected character '&', expected '&&'\n");
+                break;
+            case '|':
+                if (i + 1 < source->len && source->str[i + 1] == '|') {
+                    tok->type = SAKURA_TOKEN_OR;
+                    break;
+                }
+                printf("Error: unexpected character '|', expected '||'\n");
+                break;
+            default:
                 printf("Error: unexpected character '%c'\n", source->str[i]);
+                break;
+            }
 
             sakuraX_pushTokStack(stack, tok);
         }
@@ -194,16 +292,10 @@ struct TokenStack *sakuraY_analyze(SakuraState *S, struct s_str *source) {
 }
 
 struct Node *sakuraX_parseUnary(SakuraState *S, struct Token *token, struct Node *left) {
-    struct Node *node = malloc(sizeof(struct Node));
-    if (node == NULL) {
-        printf("Error: could not allocate memory for node\n");
-        return NULL;
-    }
+    struct Node *node = sakuraX_makeNode(SAKURA_NODE_UNARY_OPERATION);
 
-    node->type = SAKURA_NODE_UNARY_OPERATION;
     node->left = left;
     node->token = token;
-    node->right = NULL;
 
     return node;
 }
@@ -221,18 +313,14 @@ struct Node *sakuraX_binaryOperation(SakuraState *S, struct TokenStack *tokens, 
             if (token->type == types[i]) {
                 if (sakuraX_popTokStack(tokens) == NULL) {
                     S->error = SAKURA_EFLAG_SYNTAX;
+                    sakuraY_freeToken(token);
                     printf("Error: could not pop token from stack\n");
                     return NULL;
                 }
 
                 struct Node *right = fn(S, tokens);
-                struct Node *newNode = malloc(sizeof(struct Node));
-                if (newNode == NULL) {
-                    printf("Error: could not allocate memory for node\n");
-                    return NULL;
-                }
+                struct Node *newNode = sakuraX_makeNode(SAKURA_NODE_BINARY_OPERATION);
 
-                newNode->type = SAKURA_NODE_BINARY_OPERATION;
                 newNode->left = left;
                 newNode->right = right;
                 newNode->token = token;
@@ -253,15 +341,8 @@ struct Node *sakuraX_parseFactor(SakuraState *S, struct TokenStack *tokens) {
     struct Token *token = sakuraX_popTokStack(tokens);
 
     if (token->type == SAKURA_TOKEN_NUMBER) {
-        struct Node *node = malloc(sizeof(struct Node));
-        if (node == NULL) {
-            printf("Error: could not allocate memory for node\n");
-            return NULL;
-        }
+        struct Node *node = sakuraX_makeNode(SAKURA_TOKEN_NUMBER);
 
-        node->type = SAKURA_TOKEN_NUMBER;
-        node->left = NULL;
-        node->right = NULL;
         node->token = token;
 
         return node;
@@ -270,6 +351,7 @@ struct Node *sakuraX_parseFactor(SakuraState *S, struct TokenStack *tokens) {
         return sakuraX_parseUnary(S, token, op);
     } else if (token->type == SAKURA_TOKEN_LEFT_PAREN) {
         struct Node *node = sakuraX_parseExpression(S, tokens);
+        sakuraY_freeToken(token);
         token = sakuraX_popTokStack(tokens);
         if (token->type != SAKURA_TOKEN_RIGHT_PAREN) {
             printf("Error: expected ')'\n");
@@ -283,18 +365,11 @@ struct Node *sakuraX_parseFactor(SakuraState *S, struct TokenStack *tokens) {
     } else if (token->type == SAKURA_TOKEN_IDENTIFIER) {
         struct Token *nextToken = sakuraX_peekTokStack(tokens, 1);
         if (nextToken != NULL && nextToken->type == SAKURA_TOKEN_LEFT_PAREN) {
-            struct Node *node = malloc(sizeof(struct Node));
-            if (node == NULL) {
-                printf("Error: could not allocate memory for node\n");
-                return NULL;
-            }
+            struct Node *node = sakuraX_makeNode(SAKURA_NODE_CALL);
 
-            node->type = SAKURA_NODE_CALL;
-            node->args = NULL;
-            node->argCount = 0;
             node->token = token;
 
-            sakuraX_popTokStack(tokens);
+            sakuraY_freeToken(sakuraX_popTokStack(tokens));
             int hasRparen = 0;
             while (1) {
                 struct Node *arg = sakuraX_parseExpression(S, tokens);
@@ -335,19 +410,14 @@ struct Node *sakuraX_parseFactor(SakuraState *S, struct TokenStack *tokens) {
                     sakuraY_freeToken(rightParen);
                     return NULL;
                 }
+
+                sakuraY_freeToken(rightParen);
             }
 
             return node;
         } else {
-            struct Node *node = malloc(sizeof(struct Node));
-            if (node == NULL) {
-                printf("Error: could not allocate memory for node\n");
-                return NULL;
-            }
+            struct Node *node = sakuraX_makeNode(SAKURA_TOKEN_IDENTIFIER);
 
-            node->type = SAKURA_TOKEN_IDENTIFIER;
-            node->left = NULL;
-            node->right = NULL;
             node->token = token;
 
             return node;
@@ -359,10 +429,16 @@ struct Node *sakuraX_parseFactor(SakuraState *S, struct TokenStack *tokens) {
     }
 }
 
-struct Node *sakuraX_parseTerm(SakuraState *S, struct TokenStack *tokens) {
-    return sakuraX_binaryOperation(S, tokens,
-                                   (enum TokenType[]){SAKURA_TOKEN_STAR, SAKURA_TOKEN_SLASH, SAKURA_TOKEN_SENTINEL},
+struct Node *sakuraX_parseAtom(SakuraState *S, struct TokenStack *tokens) {
+    return sakuraX_binaryOperation(S, tokens, (enum TokenType[]){SAKURA_TOKEN_CARET, SAKURA_TOKEN_SENTINEL},
                                    sakuraX_parseFactor);
+}
+
+struct Node *sakuraX_parseTerm(SakuraState *S, struct TokenStack *tokens) {
+    return sakuraX_binaryOperation(
+        S, tokens,
+        (enum TokenType[]){SAKURA_TOKEN_STAR, SAKURA_TOKEN_SLASH, SAKURA_TOKEN_PERCENT, SAKURA_TOKEN_SENTINEL},
+        sakuraX_parseAtom);
 }
 
 struct Node *sakuraX_parseExpression(SakuraState *S, struct TokenStack *tokens) {
@@ -370,26 +446,114 @@ struct Node *sakuraX_parseExpression(SakuraState *S, struct TokenStack *tokens) 
         S, tokens, (enum TokenType[]){SAKURA_TOKEN_PLUS, SAKURA_TOKEN_MINUS, SAKURA_TOKEN_SENTINEL}, sakuraX_parseTerm);
 }
 
+struct Node *sakuraX_parseComparisons(SakuraState *S, struct TokenStack *tokens) {
+    return sakuraX_binaryOperation(S, tokens,
+                                   (enum TokenType[]){SAKURA_TOKEN_EQUAL_EQUAL, SAKURA_TOKEN_BANG_EQUAL,
+                                                      SAKURA_TOKEN_GREATER, SAKURA_TOKEN_GREATER_EQUAL,
+                                                      SAKURA_TOKEN_LESS, SAKURA_TOKEN_LESS_EQUAL,
+                                                      SAKURA_TOKEN_SENTINEL},
+                                   sakuraX_parseExpression);
+}
+
+struct Node *sakuraX_parseLogical(SakuraState *S, struct TokenStack *tokens) {
+    return sakuraX_binaryOperation(S, tokens,
+                                   (enum TokenType[]){SAKURA_TOKEN_AND, SAKURA_TOKEN_OR, SAKURA_TOKEN_SENTINEL},
+                                   sakuraX_parseComparisons);
+}
+
+struct Node *sakuraX_parseExpressionEntry(SakuraState *S, struct TokenStack *tokens) {
+    return sakuraX_parseLogical(S, tokens);
+}
+
+struct Node *sakuraX_parseBlocks(SakuraState *S, struct TokenStack *tokens) {
+    // if statements
+    struct Token *token = sakuraX_peekTokStack(tokens, 1);
+    if (token->type == SAKURA_TOKEN_IDENTIFIER && s_str_cmp_c2(s_str_n(token->start, token->length), "if") == 0) {
+        struct Node *node = sakuraX_makeNode(SAKURA_NODE_IF);
+
+        sakuraY_freeToken(sakuraX_popTokStack(tokens));
+        struct Node *condition = sakuraX_parseExpressionEntry(S, tokens);
+        if (condition == NULL) {
+            printf("Error: could not parse condition\n");
+            sakuraY_freeNode(node);
+            return NULL;
+        }
+
+        node->left = condition;
+
+        struct Node *block = sakuraX_parseBlocks(S, tokens);
+        if (block == NULL) {
+            printf("Error: could not parse block\n");
+            sakuraY_freeNode(node);
+            return NULL;
+        }
+
+        node->right = block;
+
+        struct Token *elseToken = sakuraX_peekTokStack(tokens, 1);
+        if (elseToken != NULL && elseToken->type == SAKURA_TOKEN_IDENTIFIER &&
+            s_str_cmp_c2(s_str_n(elseToken->start, elseToken->length), "else") == 0) {
+            sakuraY_freeToken(sakuraX_popTokStack(tokens));
+            struct Node *elseBlock = sakuraX_parseBlocks(S, tokens);
+            if (elseBlock == NULL) {
+                printf("Error: could not parse else block\n");
+                sakuraY_freeNode(node);
+                return NULL;
+            }
+
+            node->elseBlock = elseBlock;
+        } else {
+            node->elseBlock = NULL;
+        }
+
+        return node;
+    } else if (token->type == SAKURA_TOKEN_LEFT_BRACE) {
+        struct Node *node = sakuraX_makeNode(SAKURA_NODE_BLOCK);
+
+        sakuraY_freeToken(sakuraX_popTokStack(tokens));
+
+        while (sakuraX_peekTokStack_s(tokens)->type != SAKURA_TOKEN_RIGHT_BRACE) {
+            struct Node *block = sakuraX_parseBlocks(S, tokens);
+            if (block != NULL) {
+                node->args = realloc(node->args, (node->argCount + 1) * sizeof(struct Node *));
+                node->args[node->argCount++] = block;
+            } else {
+                printf("Error: could not parse block\n");
+                sakuraY_freeNode(node);
+                return NULL;
+            }
+        }
+
+        sakuraY_freeToken(sakuraX_popTokStack(tokens));
+
+        return node;
+    }
+
+    return sakuraX_parseExpressionEntry(S, tokens);
+}
+
 struct NodeStack *sakuraY_parse(SakuraState *S, struct TokenStack *tokens) {
     S->currentState = SAKURA_FLAG_PARSER;
     struct NodeStack *stack = sakuraX_newNodeStack();
 
     while (tokens->size > 0) {
-        struct Node *node = sakuraX_parseExpression(S, tokens);
+        struct Node *node = sakuraX_parseBlocks(S, tokens);
 
         if (node != NULL) {
             sakuraX_pushNodeStack(stack, node);
 
-            struct Token *token = sakuraX_popTokStack(tokens);
-            if (token->type != SAKURA_TOKEN_SEMICOLON) {
-                printf("Error: expected semicolon\n");
-                sakuraY_freeToken(token);
-                sakuraX_freeNodeStack(stack);
-                stack = NULL;
-                break;
-            }
+            if (node->type != SAKURA_NODE_IF && node->type != SAKURA_NODE_BLOCK) {
+                struct Token *token = sakuraX_popTokStack(tokens);
+                if (token->type != SAKURA_TOKEN_SEMICOLON) {
+                    printf("Error: expected semicolon\n");
+                    sakuraY_freeToken(token);
+                    sakuraX_freeNodeStack(stack);
+                    stack = NULL;
+                    break;
+                }
 
-            sakuraY_freeToken(token);
+                sakuraY_freeToken(token);
+            }
         } else {
             printf("Error: could not parse expression\n");
             sakuraX_freeNodeStack(stack);
@@ -401,14 +565,36 @@ struct NodeStack *sakuraY_parse(SakuraState *S, struct TokenStack *tokens) {
     return stack;
 }
 
-void sakuraY_freeToken(struct Token *token) { free(token); }
+void sakuraY_freeToken(struct Token *token) {
+    free(token);
+    token = NULL;
+}
 
 void sakuraY_freeNode(struct Node *node) {
-    if (node->left != NULL)
+    if (node->left != NULL) {
         sakuraY_freeNode(node->left);
-    if (node->right != NULL)
+        node->left = NULL;
+    }
+
+    if (node->right != NULL) {
         sakuraY_freeNode(node->right);
-    if (node->token != NULL)
+        node->right = NULL;
+    }
+
+    if (node->token != NULL) {
         sakuraY_freeToken(node->token);
+        node->token = NULL;
+    }
+
+    if (node->args != NULL) {
+        if (node->argCount > 0) {
+            for (size_t i = 0; i < node->argCount; i++) {
+                sakuraY_freeNode(node->args[i]);
+            }
+        }
+        free(node->args);
+    }
+
     free(node);
+    node = NULL;
 }

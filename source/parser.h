@@ -4,7 +4,7 @@
 #include "sstr.h"
 
 enum TokenType {
-    // Single Character Tokens
+    // Single Character Tokens (fully implemented)
     SAKURA_TOKEN_LEFT_PAREN,
     SAKURA_TOKEN_RIGHT_PAREN,
     SAKURA_TOKEN_LEFT_BRACE,
@@ -16,8 +16,11 @@ enum TokenType {
     SAKURA_TOKEN_SEMICOLON,
     SAKURA_TOKEN_SLASH,
     SAKURA_TOKEN_STAR,
+    SAKURA_TOKEN_CARET,
+    SAKURA_TOKEN_PERCENT,
+    SAKURA_TOKEN_HASHTAG,
 
-    // Comparisons
+    // Comparisons (fully implemented)
     SAKURA_TOKEN_BANG,
     SAKURA_TOKEN_BANG_EQUAL,
     SAKURA_TOKEN_EQUAL,
@@ -26,37 +29,32 @@ enum TokenType {
     SAKURA_TOKEN_GREATER_EQUAL,
     SAKURA_TOKEN_LESS,
     SAKURA_TOKEN_LESS_EQUAL,
+    SAKURA_TOKEN_AND,
+    SAKURA_TOKEN_OR,
 
-    // Literals
+    // Literals (fully implemented)
     SAKURA_TOKEN_IDENTIFIER,
     SAKURA_TOKEN_STRING,
     SAKURA_TOKEN_NUMBER,
 
     // Keywords
-    SAKURA_TOKEN_AND,
-    SAKURA_TOKEN_CLASS,
     SAKURA_TOKEN_ELSE,
     SAKURA_TOKEN_FALSE,
-    SAKURA_TOKEN_FUNCTION,
-    SAKURA_TOKEN_FOR,
-    SAKURA_TOKEN_IF,
     SAKURA_TOKEN_NIL,
-    SAKURA_TOKEN_OR,
-    SAKURA_TOKEN_PRINT,
     SAKURA_TOKEN_RETURN,
     SAKURA_TOKEN_SUPER,
     SAKURA_TOKEN_THIS,
     SAKURA_TOKEN_TRUE,
-    SAKURA_TOKEN_VAR,
-    SAKURA_TOKEN_WHILE,
 
     // Node Types
     SAKURA_NODE_UNARY_OPERATION,
     SAKURA_NODE_BINARY_OPERATION,
     SAKURA_NODE_CALL,
+    SAKURA_NODE_IF,
+    SAKURA_NODE_BLOCK,
 
     // Misc
-    SAKURA_TOKEN_SENTINEL
+    SAKURA_TOKEN_SENTINEL // for telling the binary operation parser to stop
 };
 
 struct Token {
@@ -73,6 +71,8 @@ struct Node {
 
     struct Node **args;
     size_t argCount;
+
+    struct Node *elseBlock;
 
     int leftLocation;
     int rightLocation;
