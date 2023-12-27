@@ -4,6 +4,24 @@
 
 #include "sakura.h"
 
+void sakuraDEBUG_dumpStack(SakuraState *S) {
+    printf("Stack dump:\n");
+    for (int i = 0; i < S->stackIndex; i++) {
+        printf("  [%d] ", i);
+        if (S->stack[i].tt == SAKURA_TNUMFLT) {
+            printf("%f\n", S->stack[i].value.n);
+        } else if (S->stack[i].tt == SAKURA_TSTR) {
+            printf("%.*s\n", S->stack[i].value.s.len, S->stack[i].value.s.str);
+        } else if (S->stack[i].tt == SAKURA_TCFUNC) {
+            printf("[CFunc %p]\n", S->stack[i].value.cfn);
+        } else if (S->stack[i].tt == SAKURA_TFUNC) {
+            printf("[SakuraFunc '<NIL>']\n");
+        } else {
+            printf("[Unknown]\n");
+        }
+    }
+}
+
 void sakuraX_interpret(SakuraState *S, struct SakuraAssembly *assembly) {
     S->currentState = SAKURA_FLAG_RUNTIME;
 
@@ -71,6 +89,54 @@ void sakuraX_interpret(SakuraState *S, struct SakuraAssembly *assembly) {
             i += 3;
             break;
         }
+        case SAKURA_DIV: {
+            reg = instructions[i + 1];
+            TValue val = sakuraY_pop(S);
+            TValue val2 = sakuraY_pop(S);
+            if (val.tt == SAKURA_TNUMFLT) {
+                if (val2.tt == SAKURA_TNUMFLT) {
+                    sakuraY_push(S, sakuraY_makeTNumber(val2.value.n / val.value.n));
+                } else {
+                    printf("Error: unknown division operands: %d %d\n", val.tt, val2.tt);
+                }
+            } else {
+                printf("Error: unknown division operands: %d\n", val.tt);
+            }
+            i += 3;
+            break;
+        }
+        case SAKURA_LT: {
+            reg = instructions[i + 1];
+            TValue val = sakuraY_pop(S);
+            TValue val2 = sakuraY_pop(S);
+            if (val.tt == SAKURA_TNUMFLT) {
+                if (val2.tt == SAKURA_TNUMFLT) {
+                    sakuraY_push(S, sakuraY_makeTNumber(val2.value.n < val.value.n ? 1 : 0));
+                } else {
+                    printf("Error: unknown less-than operands: %d %d\n", val.tt, val2.tt);
+                }
+            } else {
+                printf("Error: unknown less-than operands: %d\n", val.tt);
+            }
+            i += 3;
+            break;
+        }
+        case SAKURA_LE: {
+            reg = instructions[i + 1];
+            TValue val = sakuraY_pop(S);
+            TValue val2 = sakuraY_pop(S);
+            if (val.tt == SAKURA_TNUMFLT) {
+                if (val2.tt == SAKURA_TNUMFLT) {
+                    sakuraY_push(S, sakuraY_makeTNumber(val2.value.n <= val.value.n ? 1 : 0));
+                } else {
+                    printf("Error: unknown less-than-or-equal operands: %d %d\n", val.tt, val2.tt);
+                }
+            } else {
+                printf("Error: unknown less-than-or-equal operands: %d\n", val.tt);
+            }
+            i += 3;
+            break;
+        }
         case SAKURA_CALL: {
             int fnLoc = instructions[i + 1];
             int argc = instructions[i + 2];
@@ -88,8 +154,30 @@ void sakuraX_interpret(SakuraState *S, struct SakuraAssembly *assembly) {
             i += 2;
             break;
         }
+        case SAKURA_JMP: {
+            i = instructions[i + 1] - 1;
+            break;
+        }
+        case SAKURA_JMPIF: {
+            TValue val = sakuraY_pop(S);
+            if (val.tt == SAKURA_TNUMFLT) {
+                if (val.value.n == 0) {
+                    i = instructions[i + 1] - 1;
+                } else {
+                    i += 2;
+                }
+            } else {
+                printf("Error: unknown jump-if operand\n");
+            }
+            break;
+        }
+        case SAKURA_RETURN: {
+            // TODO: implement for global vs functional scope
+            i += 2;
+            break;
+        }
         default:
-            printf("Error: unknown/unimplemented runtime instruction '%d'\n", instructions[i]);
+            printf("Error: unknown/unimplemented runtime instruction '%d' @ %d\n", instructions[i], i);
             break;
         }
     }
