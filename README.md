@@ -34,6 +34,8 @@ Currently, I am not accepting contributions. As this is a learning experience I 
 
 You can report bugs in the issues tab of github, but I won't accept any pull requests at the moment.
 
+There is currently no bug report format, but please make it logical.
+
 ## License
 
 Sakura is licensed under the MIT license, see license.txt for more information.
