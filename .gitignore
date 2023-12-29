@@ -1,2 +1,5 @@
 *.exe
 sakura
+bin/
+out/
+int/
