@@ -180,6 +180,26 @@ void sakuraV_visitIf(SakuraState *S, struct SakuraAssembly *assembly, struct Nod
     }
 }
 
+void sakuraV_visitWhile(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node) {
+    // visit the condition
+    size_t start = assembly->size;
+    sakuraV_visitNode(S, assembly, node->left);
+
+    // bytecode to jump to the else block if the condition is false
+    size_t jump = assembly->size;
+    SakuraAssembly_push3(assembly, SAKURA_JMPIF, 0, node->left->leftLocation);
+    assembly->registers--;
+
+    // visit the while block
+    sakuraV_visitNode(S, assembly, node->right);
+
+    // bytecode to jump to the start of the while loop
+    SakuraAssembly_push2(assembly, SAKURA_JMP, start);
+
+    // set the jump location
+    assembly->instructions[jump + 1] = assembly->size;
+}
+
 void sakuraV_visitBlock(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node) {
     for (size_t i = 0; i < node->argCount; i++) {
         sakuraV_visitNode(S, assembly, node->args[i]);
@@ -200,11 +220,14 @@ void sakuraV_visitNode(SakuraState *S, struct SakuraAssembly *assembly, struct N
     case SAKURA_NODE_CALL:
         sakuraV_visitCall(S, assembly, node);
         break;
+    case SAKURA_NODE_BLOCK:
+        sakuraV_visitBlock(S, assembly, node);
+        break;
     case SAKURA_NODE_IF:
         sakuraV_visitIf(S, assembly, node);
         break;
-    case SAKURA_NODE_BLOCK:
-        sakuraV_visitBlock(S, assembly, node);
+    case SAKURA_NODE_WHILE:
+        sakuraV_visitWhile(S, assembly, node);
         break;
     default:
         printf("Error: unknown node type '%d'\n", node->type);

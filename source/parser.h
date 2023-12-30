@@ -50,8 +50,9 @@ enum TokenType {
     SAKURA_NODE_UNARY_OPERATION,
     SAKURA_NODE_BINARY_OPERATION,
     SAKURA_NODE_CALL,
-    SAKURA_NODE_IF,
     SAKURA_NODE_BLOCK,
+    SAKURA_NODE_IF,
+    SAKURA_NODE_WHILE,
 
     // Misc
     SAKURA_TOKEN_SENTINEL // for telling the binary operation parser to stop
