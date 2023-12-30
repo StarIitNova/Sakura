@@ -1,5 +1,6 @@
 #include "svm.h"
 
+#include <math.h>
 #include <stdlib.h>
 
 #include "sakura.h"
@@ -21,6 +22,23 @@ void sakuraDEBUG_dumpStack(SakuraState *S) {
         }
     }
 }
+
+#define REGISTER_BINOP(name, operation)                                                                                \
+    reg = instructions[i + 1];                                                                                         \
+    TValue val = sakuraY_pop(S);                                                                                       \
+    TValue val2 = sakuraY_pop(S);                                                                                      \
+    if (val.tt == SAKURA_TNUMFLT) {                                                                                    \
+        if (val2.tt == SAKURA_TNUMFLT) {                                                                               \
+            double a = val2.value.n;                                                                                   \
+            double b = val.value.n;                                                                                    \
+            sakuraY_push(S, sakuraY_makeTNumber(operation));                                                           \
+        } else {                                                                                                       \
+            printf("Error: unknown " name " operands: %d %d\n", val.tt, val2.tt);                                      \
+        }                                                                                                              \
+    } else {                                                                                                           \
+        printf("Error: unknown " name " operands: %d\n", val.tt);                                                      \
+    }                                                                                                                  \
+    i += 3;
 
 void sakuraX_interpret(SakuraState *S, struct SakuraAssembly *assembly) {
     S->currentState = SAKURA_FLAG_RUNTIME;
@@ -74,67 +92,31 @@ void sakuraX_interpret(SakuraState *S, struct SakuraAssembly *assembly) {
             break;
         }
         case SAKURA_MUL: {
-            reg = instructions[i + 1];
-            TValue val = sakuraY_pop(S);
-            TValue val2 = sakuraY_pop(S);
-            if (val.tt == SAKURA_TNUMFLT) {
-                if (val2.tt == SAKURA_TNUMFLT) {
-                    sakuraY_push(S, sakuraY_makeTNumber(val2.value.n * val.value.n));
-                } else {
-                    printf("Error: unknown multiplication operands: %d %d\n", val.tt, val2.tt);
-                }
-            } else {
-                printf("Error: unknown multiplication operands: %d\n", val.tt);
-            }
-            i += 3;
+            REGISTER_BINOP("multiplication", a * b);
             break;
         }
         case SAKURA_DIV: {
-            reg = instructions[i + 1];
-            TValue val = sakuraY_pop(S);
-            TValue val2 = sakuraY_pop(S);
-            if (val.tt == SAKURA_TNUMFLT) {
-                if (val2.tt == SAKURA_TNUMFLT) {
-                    sakuraY_push(S, sakuraY_makeTNumber(val2.value.n / val.value.n));
-                } else {
-                    printf("Error: unknown division operands: %d %d\n", val.tt, val2.tt);
-                }
-            } else {
-                printf("Error: unknown division operands: %d\n", val.tt);
-            }
-            i += 3;
+            REGISTER_BINOP("division", a / b);
+            break;
+        }
+        case SAKURA_MOD: {
+            REGISTER_BINOP("modulo", fmod(a, b));
+            break;
+        }
+        case SAKURA_POW: {
+            REGISTER_BINOP("power", pow(a, b));
             break;
         }
         case SAKURA_LT: {
-            reg = instructions[i + 1];
-            TValue val = sakuraY_pop(S);
-            TValue val2 = sakuraY_pop(S);
-            if (val.tt == SAKURA_TNUMFLT) {
-                if (val2.tt == SAKURA_TNUMFLT) {
-                    sakuraY_push(S, sakuraY_makeTNumber(val2.value.n < val.value.n ? 1 : 0));
-                } else {
-                    printf("Error: unknown less-than operands: %d %d\n", val.tt, val2.tt);
-                }
-            } else {
-                printf("Error: unknown less-than operands: %d\n", val.tt);
-            }
-            i += 3;
+            REGISTER_BINOP("less-than", a < b ? 1 : 0);
             break;
         }
         case SAKURA_LE: {
-            reg = instructions[i + 1];
-            TValue val = sakuraY_pop(S);
-            TValue val2 = sakuraY_pop(S);
-            if (val.tt == SAKURA_TNUMFLT) {
-                if (val2.tt == SAKURA_TNUMFLT) {
-                    sakuraY_push(S, sakuraY_makeTNumber(val2.value.n <= val.value.n ? 1 : 0));
-                } else {
-                    printf("Error: unknown less-than-or-equal operands: %d %d\n", val.tt, val2.tt);
-                }
-            } else {
-                printf("Error: unknown less-than-or-equal operands: %d\n", val.tt);
-            }
-            i += 3;
+            REGISTER_BINOP("less-than-or-equal-to", a <= b ? 1 : 0);
+            break;
+        }
+        case SAKURA_EQ: {
+            REGISTER_BINOP("equal-to", a == b ? 1 : 0);
             break;
         }
         case SAKURA_CALL: {
