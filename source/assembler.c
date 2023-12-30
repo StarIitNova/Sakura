@@ -181,14 +181,17 @@ void sakuraV_visitIf(SakuraState *S, struct SakuraAssembly *assembly, struct Nod
 }
 
 void sakuraV_visitWhile(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node) {
-    // visit the condition
     size_t start = assembly->size;
-    sakuraV_visitNode(S, assembly, node->left);
+    size_t jump = 0;
+    if (node->left != NULL) {
+        // visit the condition
+        sakuraV_visitNode(S, assembly, node->left);
 
-    // bytecode to jump to the else block if the condition is false
-    size_t jump = assembly->size;
-    SakuraAssembly_push3(assembly, SAKURA_JMPIF, 0, node->left->leftLocation);
-    assembly->registers--;
+        // bytecode to jump to the else block if the condition is false
+        jump = assembly->size;
+        SakuraAssembly_push3(assembly, SAKURA_JMPIF, 0, node->left->leftLocation);
+        assembly->registers--;
+    }
 
     // visit the while block
     sakuraV_visitNode(S, assembly, node->right);
@@ -197,7 +200,8 @@ void sakuraV_visitWhile(SakuraState *S, struct SakuraAssembly *assembly, struct 
     SakuraAssembly_push2(assembly, SAKURA_JMP, start);
 
     // set the jump location
-    assembly->instructions[jump + 1] = assembly->size;
+    if (node->left != NULL)
+        assembly->instructions[jump + 1] = assembly->size;
 }
 
 void sakuraV_visitBlock(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node) {

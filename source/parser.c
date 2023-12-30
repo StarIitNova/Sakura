@@ -610,6 +610,22 @@ struct Node *sakuraX_parseBlocks(SakuraState *S, struct TokenStack *tokens) {
         node->right = block;
 
         return node;
+    } else if (token->type == SAKURA_TOKEN_IDENTIFIER && str_cmp_cl(token->start, token->length, "loop") == 0) {
+        struct Node *node = sakuraX_makeNode(SAKURA_NODE_WHILE);
+        node->left = NULL;
+
+        sakuraY_freeToken(sakuraX_popTokStack(tokens));
+
+        struct Node *block = sakuraX_parseBlocks(S, tokens);
+        if (block == NULL) {
+            printf("Error: could not parse block\n");
+            sakuraY_freeNode(node);
+            return NULL;
+        }
+
+        node->right = block;
+
+        return node;
     } else if (token->type == SAKURA_TOKEN_LEFT_BRACE) {
         struct Node *node = sakuraX_makeNode(SAKURA_NODE_BLOCK);
 
