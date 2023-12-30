@@ -108,6 +108,47 @@ void sakuraV_visitNumber(SakuraState *S, struct SakuraAssembly *assembly, struct
     }
 }
 
+void sakuraV_visitIdentifier(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node) {
+    // get the variable name as an s_str
+    struct s_str name;
+    name.str = (char *)node->token->start;
+    name.len = node->token->length;
+
+    // get the variable from the globals table
+    TValue *val = sakuraX_TVMapGet(&S->globals, &name);
+    int idx = sakuraX_TVMapGetIndex(&S->globals, &name);
+
+    // check if the variable exists
+    if (idx != -1) {
+        // load the value into the next register
+        size_t reg = assembly->registers++;
+        SakuraAssembly_push3(assembly, SAKURA_GETGLOBAL, reg, idx);
+        // store the register location in the node
+        node->leftLocation = reg;
+
+        if (reg >= assembly->highestRegister) {
+            assembly->highestRegister = reg;
+        }
+    } else {
+        // check the locals table (user created variable)
+        for (size_t i = 0; i < S->localsSize; i++) {
+            if (s_str_cmp(&name, &S->locals[i]) == 0) {
+                // load the value into the next register
+                size_t reg = assembly->registers++;
+                SakuraAssembly_push3(assembly, SAKURA_MOVE, reg, i);
+                // store the register location in the node
+                node->leftLocation = reg;
+
+                if (reg >= assembly->highestRegister) {
+                    assembly->highestRegister = reg;
+                }
+
+                return;
+            }
+        }
+    }
+}
+
 void sakuraV_visitCall(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node) {
     // get the function name as an s_str
     struct s_str name;
@@ -210,6 +251,20 @@ void sakuraV_visitBlock(SakuraState *S, struct SakuraAssembly *assembly, struct 
     }
 }
 
+void sakuraV_visitVar(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node) {
+    // get the variable name as an s_str
+    struct s_str name;
+    name.str = (char *)node->token->start;
+    name.len = node->token->length;
+
+    // push the value onto the stack
+    size_t reg = assembly->registers;
+    sakuraV_visitNode(S, assembly, node->left);
+
+    // store the register location in the node
+    sakuraY_storeLocal(S, &name, reg);
+}
+
 void sakuraV_visitNode(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node) {
     switch (node->type) {
     case SAKURA_NODE_UNARY_OPERATION:
@@ -232,6 +287,12 @@ void sakuraV_visitNode(SakuraState *S, struct SakuraAssembly *assembly, struct N
         break;
     case SAKURA_NODE_WHILE:
         sakuraV_visitWhile(S, assembly, node);
+        break;
+    case SAKURA_NODE_VAR:
+        sakuraV_visitVar(S, assembly, node);
+        break;
+    case SAKURA_TOKEN_IDENTIFIER:
+        sakuraV_visitIdentifier(S, assembly, node);
         break;
     default:
         printf("Error: unknown node type '%d'\n", node->type);

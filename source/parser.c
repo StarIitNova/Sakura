@@ -293,6 +293,8 @@ struct TokenStack *sakuraY_analyze(SakuraState *S, struct s_str *source) {
     return stack;
 }
 
+struct Node *sakuraX_parseExpressionEntry(SakuraState *S, struct TokenStack *tokens);
+
 struct Node *sakuraX_parseUnary(SakuraState *S, struct Token *token, struct Node *left) {
     if (left->type == SAKURA_TOKEN_NUMBER) {
         if (token->type == SAKURA_TOKEN_MINUS) {
@@ -541,8 +543,48 @@ struct Node *sakuraX_parseLogical(SakuraState *S, struct TokenStack *tokens) {
                                    sakuraX_parseComparisons);
 }
 
-struct Node *sakuraX_parseExpressionEntry(SakuraState *S, struct TokenStack *tokens) {
+struct Node *sakuraX_parseVar(SakuraState *S, struct TokenStack *tokens) {
+    struct Token *token = sakuraX_peekTokStack(tokens, 1);
+
+    if (token->type == SAKURA_TOKEN_IDENTIFIER && str_cmp_cl(token->start, token->length, "let") == 0) {
+        sakuraY_freeToken(sakuraX_popTokStack(tokens));
+        struct Token *name = sakuraX_popTokStack(tokens);
+        if (name == NULL || name->type != SAKURA_TOKEN_IDENTIFIER) {
+            printf("Error: expected identifier\n");
+            sakuraY_freeToken(name);
+            return NULL;
+        }
+
+        struct Node *node = sakuraX_makeNode(SAKURA_NODE_VAR);
+        node->token = name;
+
+        struct Token *equal = sakuraX_popTokStack(tokens);
+        if (equal == NULL || equal->type != SAKURA_TOKEN_EQUAL) {
+            printf("Error: expected '='\n");
+            sakuraY_freeToken(equal);
+            sakuraY_freeNode(node);
+            return NULL;
+        }
+
+        sakuraY_freeToken(equal);
+
+        struct Node *value = sakuraX_parseExpressionEntry(S, tokens);
+        if (value == NULL) {
+            printf("Error: could not parse value\n");
+            sakuraY_freeNode(node);
+            return NULL;
+        }
+
+        node->left = value;
+
+        return node;
+    }
+
     return sakuraX_parseLogical(S, tokens);
+}
+
+struct Node *sakuraX_parseExpressionEntry(SakuraState *S, struct TokenStack *tokens) {
+    return sakuraX_parseVar(S, tokens);
 }
 
 struct Node *sakuraX_parseBlocks(SakuraState *S, struct TokenStack *tokens) {
