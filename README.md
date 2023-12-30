@@ -26,9 +26,11 @@ print(1 + 2 * 3);
 
 ## Documentation
 
-Coming Soon
+Will be provided when the language is at a "finished" state, so maybe around the time it becomes convenient to use?
 
 ## Contributing
+
+Below still applies BUT, if you provide some decent code, especially for something I don't want to do, I will accept the pull request.
 
 Currently, I am not accepting contributions. As this is a learning experience I will not intentionally push bugged versions to github, rather only versions which are "working". In the future when the project is mostly complete, I will accept pull requests to fix unnoticed bugs or to help with getting the language from the partial completion state (after the "learning experience" stuff) to a convenient to use language (something that could be preferred over Lua (or Javascript) for example).
 
