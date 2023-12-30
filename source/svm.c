@@ -59,6 +59,12 @@ void sakuraX_interpret(SakuraState *S, struct SakuraAssembly *assembly) {
             sakuraY_push(S, S->globals.pairs[instructions[i + 2]].value);
             i += 2;
             break;
+        case SAKURA_MOVE:
+            S->stack[instructions[i + 1]] = S->stack[instructions[i + 2]];
+            if (instructions[i + 1] == S->stackIndex)
+                S->stackIndex++;
+            i += 2;
+            break;
         case SAKURA_ADD: {
             reg = instructions[i + 1];
             TValue val = sakuraY_pop(S);
