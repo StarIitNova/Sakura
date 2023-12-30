@@ -130,6 +130,12 @@ void sakuraX_writeDisasm(SakuraState *S, struct SakuraAssembly *assembler, const
             i += 2;
             break;
         }
+        case SAKURA_MOVE: {
+            printf("    %d\t(%d)\t\tMOVE\t\t%d, %d\n", idx, i, assembler->instructions[i + 1],
+                   assembler->instructions[i + 2]);
+            i += 2;
+            break;
+        }
         }
 
         idx++;
