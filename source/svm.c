@@ -5,6 +5,23 @@
 
 #include "sakura.h"
 
+#define REGISTER_BINOP(name, operation)                                                                                \
+    reg = instructions[i + 1];                                                                                         \
+    TValue val = sakuraY_pop(S);                                                                                       \
+    TValue val2 = sakuraY_pop(S);                                                                                      \
+    if (val.tt == SAKURA_TNUMFLT) {                                                                                    \
+        if (val2.tt == SAKURA_TNUMFLT) {                                                                               \
+            double a = val2.value.n;                                                                                   \
+            double b = val.value.n;                                                                                    \
+            sakuraY_push(S, sakuraY_makeTNumber(operation));                                                           \
+        } else {                                                                                                       \
+            printf("Error: unknown " name " operands: %d %d\n", val.tt, val2.tt);                                      \
+        }                                                                                                              \
+    } else {                                                                                                           \
+        printf("Error: unknown " name " operands: %d\n", val.tt);                                                      \
+    }                                                                                                                  \
+    i += 3;
+
 void sakuraDEBUG_dumpStack(SakuraState *S) {
     printf("Stack dump:\n");
     for (int i = 0; i < S->stackIndex; i++) {
@@ -22,23 +39,6 @@ void sakuraDEBUG_dumpStack(SakuraState *S) {
         }
     }
 }
-
-#define REGISTER_BINOP(name, operation)                                                                                \
-    reg = instructions[i + 1];                                                                                         \
-    TValue val = sakuraY_pop(S);                                                                                       \
-    TValue val2 = sakuraY_pop(S);                                                                                      \
-    if (val.tt == SAKURA_TNUMFLT) {                                                                                    \
-        if (val2.tt == SAKURA_TNUMFLT) {                                                                               \
-            double a = val2.value.n;                                                                                   \
-            double b = val.value.n;                                                                                    \
-            sakuraY_push(S, sakuraY_makeTNumber(operation));                                                           \
-        } else {                                                                                                       \
-            printf("Error: unknown " name " operands: %d %d\n", val.tt, val2.tt);                                      \
-        }                                                                                                              \
-    } else {                                                                                                           \
-        printf("Error: unknown " name " operands: %d\n", val.tt);                                                      \
-    }                                                                                                                  \
-    i += 3;
 
 void sakuraX_interpret(SakuraState *S, struct SakuraAssembly *assembly) {
     S->currentState = SAKURA_FLAG_RUNTIME;
