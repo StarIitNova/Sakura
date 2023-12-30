@@ -27,6 +27,14 @@ SakuraState *sakura_createState() {
         state->callStackSize = 128;
         state->callStackIndex = 0;
 
+        state->locals = malloc(128 * sizeof(struct s_str));
+        state->localsSize = 128;
+
+        for (size_t i = 0; i < state->localsSize; i++) {
+            state->locals[i].str = NULL;
+            state->locals[i].len = 0;
+        }
+
         sakuraX_initializeTVMap(&state->globals, 16);
 
         // initialize registry
@@ -58,6 +66,10 @@ void sakura_destroyState(SakuraState *state) {
         state->callStack = NULL;
         state->callStackSize = 0;
         state->callStackIndex = 0;
+        for (size_t i = 0; i < state->localsSize; i++)
+            s_str_free(&state->locals[i]);
+        free(state->locals);
+        state->locals = NULL;
         free(state);
     }
 }
@@ -204,6 +216,21 @@ struct s_str sakura_popString(SakuraState *S) {
         exit(1);
     }
     return val.value.s;
+}
+
+void sakuraY_storeLocal(SakuraState *S, const struct s_str *name, int idx) {
+    if (idx >= S->localsSize) {
+        S->locals = realloc(S->locals, (idx + 1) * sizeof(struct s_str));
+
+        for (size_t i = S->localsSize; i < idx + 1; i++) {
+            S->locals[i].str = NULL;
+            S->locals[i].len = 0;
+        }
+
+        S->localsSize = idx + 1;
+    }
+
+    S->locals[idx] = s_str_copy(name);
 }
 
 void copyTValue(TValue *dest, TValue *src) {

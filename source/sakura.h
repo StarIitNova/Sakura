@@ -4,8 +4,7 @@
 
 #include "sstr.h"
 
-#define SAKURA_STACK_SIZE 100
-#define SAKURA_GLOBAL_VARS_SIZE 100
+#define SAKURA_STACK_SIZE 8000
 
 typedef unsigned short SakuraFlag;
 
@@ -75,6 +74,8 @@ struct SakuraState {
     SakuraRegistry registry;
     SakuraConstantPool pool;
     struct TVMap globals;
+    struct s_str *locals;
+    size_t localsSize;
     int *callStack;
     size_t callStackSize;
     size_t callStackIndex;
@@ -112,6 +113,8 @@ void sakuraY_push(SakuraState *S, TValue val);
 TValue sakuraY_pop(SakuraState *S);
 TValue *sakuraY_peek(SakuraState *S);
 int sakura_peek(SakuraState *S);
+
+void sakuraY_storeLocal(SakuraState *S, const struct s_str *name, int idx);
 
 int sakura_isNumber(SakuraState *S);
 int sakura_isString(SakuraState *S);
