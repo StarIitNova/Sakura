@@ -1,1 +1,2 @@
-loop print(123)
+let x = 5
+print(x)

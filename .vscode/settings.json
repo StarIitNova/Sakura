@@ -3,6 +3,7 @@
     "sstr.h": "c",
     "stdio.h": "c",
     "type_traits": "c",
-    "sakura.h": "c"
-  }
+    "sakura.h": "c",
+    "typeinfo": "c"
+}
 }
