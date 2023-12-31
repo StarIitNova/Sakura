@@ -19,8 +19,8 @@ struct Node *sakuraX_makeNode(enum TokenType type) {
     node->args = NULL;
     node->argCount = 0;
     node->elseBlock = NULL;
-    node->leftLocation = -11111111;
-    node->rightLocation = -11111111;
+    node->leftLocation = -11111111;  // value is chosen as a poison
+    node->rightLocation = -11111111; // value is chosen as a poison
 
     return node;
 }
@@ -453,7 +453,7 @@ struct Node *sakuraX_parseFactor(SakuraState *S, struct TokenStack *tokens) {
 
             sakuraY_freeToken(sakuraX_popTokStack(tokens));
             int hasRparen = 0;
-            while (1) {
+            while (sakuraX_peekTokStack(tokens, 1)->type != SAKURA_TOKEN_RIGHT_PAREN) {
                 struct Node *arg = sakuraX_parseExpression(S, tokens);
                 if (arg != NULL) {
                     node->args = realloc(node->args, (node->argCount + 1) * sizeof(struct Node *));
@@ -666,6 +666,74 @@ struct Node *sakuraX_parseBlocks(SakuraState *S, struct TokenStack *tokens) {
         }
 
         node->right = block;
+
+        return node;
+    } else if (token->type == SAKURA_TOKEN_IDENTIFIER && str_cmp_cl(token->start, token->length, "fn") == 0) {
+        struct Node *node = sakuraX_makeNode(SAKURA_NODE_FUNCTION);
+
+        sakuraY_freeToken(sakuraX_popTokStack(tokens));
+        struct Token *name = sakuraX_popTokStack(tokens);
+        if (name == NULL || name->type != SAKURA_TOKEN_IDENTIFIER) {
+            printf("Error: expected identifier, got %d\n", name->type);
+            sakuraY_freeToken(name);
+            return NULL;
+        }
+
+        node->token = name;
+
+        struct Token *leftParen = sakuraX_popTokStack(tokens);
+        if (leftParen == NULL || leftParen->type != SAKURA_TOKEN_LEFT_PAREN) {
+            printf("Error: expected '('\n");
+            sakuraY_freeToken(leftParen);
+            sakuraY_freeNode(node);
+            return NULL;
+        }
+
+        sakuraY_freeToken(leftParen);
+
+        while (1) {
+            struct Token *arg = sakuraX_popTokStack(tokens);
+            if (arg != NULL && arg->type == SAKURA_TOKEN_IDENTIFIER) {
+                node->args = realloc(node->args, (node->argCount + 1) * sizeof(struct Node *));
+                node->args[node->argCount++] = sakuraX_makeNode(SAKURA_TOKEN_IDENTIFIER);
+                node->args[node->argCount - 1]->token = arg;
+
+                struct Token *comma = sakuraX_popTokStack(tokens);
+                if (comma != NULL && comma->type == SAKURA_TOKEN_COMMA) {
+                    sakuraY_freeToken(comma);
+                    continue;
+                } else {
+                    if (comma != NULL && comma->type == SAKURA_TOKEN_RIGHT_PAREN) {
+                        sakuraY_freeToken(comma);
+                        break;
+                    } else {
+                        printf("Error: expected ',' or ')'\n");
+                        sakuraY_freeNode(node);
+                        sakuraY_freeToken(comma);
+                        return NULL;
+                    }
+                }
+            } else {
+                if (arg->type == SAKURA_TOKEN_RIGHT_PAREN) {
+                    sakuraY_freeToken(arg);
+                    break;
+                }
+
+                printf("Error: expected identifier\n");
+                sakuraY_freeNode(node);
+                sakuraY_freeToken(arg);
+                return NULL;
+            }
+        }
+
+        struct Node *block = sakuraX_parseBlocks(S, tokens);
+        if (block == NULL) {
+            printf("Error: could not parse block\n");
+            sakuraY_freeNode(node);
+            return NULL;
+        }
+
+        node->left = block;
 
         return node;
     } else if (token->type == SAKURA_TOKEN_LEFT_BRACE) {

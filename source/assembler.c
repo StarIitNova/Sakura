@@ -149,6 +149,41 @@ void sakuraV_visitIdentifier(SakuraState *S, struct SakuraAssembly *assembly, st
     }
 }
 
+void sakuraV_visitFunction(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node) {
+    // create a new assembly for the function
+    struct SakuraAssembly *funcAssembly = SakuraAssembly();
+
+    // visit the function body
+    sakuraV_visitNode(S, funcAssembly, node->left);
+
+    // bytecode to return from the function
+    SakuraAssembly_push3(funcAssembly, SAKURA_RETURN, 0, 0);
+
+    // create a closure from the function
+    size_t reg = assembly->registers++;
+    SakuraAssembly_push3(assembly, SAKURA_CLOSURE, reg, assembly->closureIdx);
+
+    // bytecode to set the function name
+    struct s_str v;
+    v.str = (char *)node->token->start;
+    v.len = node->token->length;
+    int idx = sakuraX_pushKString(assembly, &v);
+    SakuraAssembly_push3(assembly, SAKURA_SETGLOBAL, reg, idx);
+    sakuraX_TVMapInsert(&S->globals, &v, sakuraY_makeTFunc(funcAssembly));
+    assembly->registers--;
+
+    // store the register location in the node
+    node->leftLocation = reg;
+
+    if (reg >= assembly->highestRegister) {
+        assembly->highestRegister = reg;
+    }
+
+    SakuraAssembly_pushChildAssembly(assembly, funcAssembly);
+
+    sakuraY_mergePoolsA(&assembly->pool, &funcAssembly->pool);
+}
+
 void sakuraV_visitCall(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node) {
     // get the function name as an s_str
     struct s_str name;
@@ -279,6 +314,9 @@ void sakuraV_visitNode(SakuraState *S, struct SakuraAssembly *assembly, struct N
     case SAKURA_NODE_CALL:
         sakuraV_visitCall(S, assembly, node);
         break;
+    case SAKURA_NODE_FUNCTION:
+        sakuraV_visitFunction(S, assembly, node);
+        break;
     case SAKURA_NODE_BLOCK:
         sakuraV_visitBlock(S, assembly, node);
         break;
@@ -314,7 +352,7 @@ struct SakuraAssembly *sakuraY_assemble(SakuraState *S, struct NodeStack *nodes)
     return assembly;
 }
 
-struct SakuraAssembly *SakuraAssembly() {
+struct SakuraAssembly *SakuraAssembly_new(int fullSetup) {
     struct SakuraAssembly *assembly = malloc(sizeof(struct SakuraAssembly));
     assembly->instructions = malloc(64 * sizeof(int));
     assembly->size = 0;
@@ -325,14 +363,23 @@ struct SakuraAssembly *SakuraAssembly() {
     assembly->highestRegister = 0;
     assembly->functionsLoaded = 0;
 
+    assembly->closures = malloc(4 * sizeof(struct SakuraAssembly *));
+    assembly->closureCapacity = 4;
+    assembly->closureIdx = 0;
+
     assembly->pool.size = 0;
-    assembly->pool.capacity = 8;
-    assembly->pool.constants = malloc(assembly->pool.capacity * sizeof(TValue));
+    assembly->pool.capacity = fullSetup ? 8 : 0;
+    assembly->pool.constants = fullSetup ? malloc(assembly->pool.capacity * sizeof(TValue)) : NULL;
     return assembly;
 }
 
 void sakuraX_freeAssembly(struct SakuraAssembly *assembly) {
     if (assembly->pool.constants) {
+        for (size_t i = 0; i < assembly->pool.size; i++) {
+            if (assembly->pool.constants[i].tt == SAKURA_TSTR)
+                s_str_free(&assembly->pool.constants[i].value.s);
+        }
+
         free(assembly->pool.constants);
         assembly->pool.constants = NULL;
         assembly->pool.size = 0;
@@ -341,6 +388,13 @@ void sakuraX_freeAssembly(struct SakuraAssembly *assembly) {
     if (assembly->instructions) {
         free(assembly->instructions);
         assembly->instructions = NULL;
+    }
+
+    if (assembly->closures) {
+        for (size_t i = 0; i < assembly->closureIdx; i++)
+            sakuraX_freeAssembly(assembly->closures[i]);
+        free(assembly->closures);
+        assembly->closures = NULL;
     }
 
     free(assembly);
@@ -389,4 +443,13 @@ int sakuraX_pushKString(struct SakuraAssembly *assembly, const struct s_str *val
     size_t idx = assembly->pool.size;
     assembly->pool.constants[assembly->pool.size++] = (TValue){.value.s = s_str_copy(value), .tt = SAKURA_TSTR};
     return -(idx + 1);
+}
+
+void SakuraAssembly_pushChildAssembly(struct SakuraAssembly *assembly, struct SakuraAssembly *child) {
+    if (assembly->closureIdx >= assembly->closureCapacity) {
+        assembly->closureCapacity *= 2;
+        assembly->closures = realloc(assembly->closures, assembly->closureCapacity * sizeof(struct SakuraAssembly *));
+    }
+
+    assembly->closures[assembly->closureIdx++] = child;
 }

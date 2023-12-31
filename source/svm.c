@@ -5,6 +5,8 @@
 
 #include "sakura.h"
 
+#include "disasm.h"
+
 #define REGISTER_BINOP(name, operation)                                                                                \
     reg = instructions[i + 1];                                                                                         \
     TValue val = sakuraY_pop(S);                                                                                       \
@@ -40,10 +42,18 @@ void sakuraDEBUG_dumpStack(SakuraState *S) {
     }
 }
 
-void sakuraX_interpret(SakuraState *S, struct SakuraAssembly *assembly) {
+int sakuraX_interpretA(SakuraState *S, struct SakuraAssembly *assembly, int offset) {
     S->currentState = SAKURA_FLAG_RUNTIME;
 
     sakuraY_mergePools(S, &assembly->pool);
+
+    if (offset > 0) {
+        int argcA = sakuraY_peek(S)->value.n;
+        // printf("interpretA called with %d args\n", argcA);
+        // sakuraDEBUG_dumpStack(S);
+    }
+
+    int preStackIdx = S->stackIndex;
 
     int *instructions = assembly->instructions;
     for (size_t i = 0; i < assembly->size; i++) {
@@ -54,9 +64,18 @@ void sakuraX_interpret(SakuraState *S, struct SakuraAssembly *assembly) {
             sakuraY_push(S, assembly->pool.constants[-instructions[i + 2] - 1]);
             i += 2;
             break;
+        case SAKURA_SETGLOBAL:
+            sakura_setGlobal(S, &assembly->pool.constants[-instructions[i + 2] - 1].value.s);
+            i += 2;
+            break;
         case SAKURA_GETGLOBAL:
             // ignore the first argument (store reg) as it is NOT needed
             sakuraY_push(S, S->globals.pairs[instructions[i + 2]].value);
+            i += 2;
+            break;
+        case SAKURA_CLOSURE:
+            // ignore the first argument (store reg) as it is NOT needed
+            sakuraY_push(S, sakuraY_makeTFunc(assembly->closures[instructions[i + 2]]));
             i += 2;
             break;
         case SAKURA_MOVE:
@@ -126,7 +145,7 @@ void sakuraX_interpret(SakuraState *S, struct SakuraAssembly *assembly) {
             break;
         }
         case SAKURA_CALL: {
-            int fnLoc = instructions[i + 1];
+            int fnLoc = instructions[i + 1] + offset;
             int argc = instructions[i + 2];
             TValue *fn = &S->stack[fnLoc];
             if (fn->tt == SAKURA_TCFUNC) {
@@ -135,7 +154,7 @@ void sakuraX_interpret(SakuraState *S, struct SakuraAssembly *assembly) {
                 int ret = fn->value.cfn(S);
                 if (ret != 0) {
                     printf("Error: C function returned non-zero (%d) value\n", ret);
-                    exit(1);
+                    return 1;
                 }
 
                 if (stackidx - S->stackIndex != argc) {
@@ -145,7 +164,23 @@ void sakuraX_interpret(SakuraState *S, struct SakuraAssembly *assembly) {
                     sakuraY_pop(S); // pop the function
                 }
             } else if (fn->tt == SAKURA_TFUNC) {
-                printf("Error: function calls are not implemented yet\n");
+                int stackidx = S->stackIndex;
+                sakuraY_push(S, sakuraY_makeTNumber(argc));
+                int ret = sakuraX_interpretA(S, fn->value.assembly, S->stackIndex);
+                if (ret != 0) {
+                    printf("Error: Sakura function returned non-zero (%d) value\n", ret);
+                    return 1;
+                }
+
+                if (stackidx - S->stackIndex != argc) {
+                    printf(
+                        "Warning: Sakura function did not pop all arguments off the stack (%d removed, %d expected)\n",
+                        stackidx - S->stackIndex, argc);
+                } else {
+                    sakuraY_pop(S); // pop the function
+                }
+
+                return 1;
             }
             i += 2;
             break;
@@ -168,7 +203,11 @@ void sakuraX_interpret(SakuraState *S, struct SakuraAssembly *assembly) {
             break;
         }
         case SAKURA_RETURN: {
-            // TODO: implement for global vs functional scope
+            if (offset > 0) {
+                for (int i = 0; i < S->stackIndex - preStackIdx; i++) {
+                    sakuraY_pop(S);
+                }
+            }
             i += 2;
             break;
         }
@@ -177,4 +216,12 @@ void sakuraX_interpret(SakuraState *S, struct SakuraAssembly *assembly) {
             break;
         }
     }
+
+    if (offset > 0) {
+        sakuraY_pop(S); // pop argc off of the stack
+    }
+
+    return 0;
 }
+
+int sakuraX_interpret(SakuraState *S, struct SakuraAssembly *assembly) { return sakuraX_interpretA(S, assembly, 0); }

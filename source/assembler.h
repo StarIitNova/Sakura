@@ -14,6 +14,10 @@ struct SakuraAssembly {
     size_t capacity;
     size_t registers;
 
+    struct SakuraAssembly **closures;
+    size_t closureCapacity;
+    size_t closureIdx;
+
     size_t highestRegister;
     size_t functionsLoaded;
 };
@@ -75,9 +79,9 @@ struct SakuraAssembly {
 
 struct SakuraAssembly *sakuraY_assemble(SakuraState *S, struct NodeStack *nodes);
 
-#define SakuraAssembly(s) SakuraAssembly_new(s)
+#define SakuraAssembly() SakuraAssembly_new(1)
 
-struct SakuraAssembly *SakuraAssembly();
+struct SakuraAssembly *SakuraAssembly_new(int fullSetup);
 void sakuraX_freeAssembly(struct SakuraAssembly *assembly);
 void SakuraAssembly_push(struct SakuraAssembly *assembly, int instruction);
 void SakuraAssembly_push2(struct SakuraAssembly *assembly, int instruction, int a);
@@ -86,3 +90,5 @@ void SakuraAssembly_push4(struct SakuraAssembly *assembly, int instruction, int 
 
 int sakuraX_pushKNumber(struct SakuraAssembly *assembly, double value);
 int sakuraX_pushKString(struct SakuraAssembly *assembly, const struct s_str *value);
+
+void SakuraAssembly_pushChildAssembly(struct SakuraAssembly *assembly, struct SakuraAssembly *child);
