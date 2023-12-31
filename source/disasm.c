@@ -20,9 +20,9 @@ char *sakuraX_readTVal(TValue *val) {
 }
 
 void sakuraX_writeDisasm(SakuraState *S, struct SakuraAssembly *assembler, const char *filename, int mode) {
-    printf("main <%s:0,0> (%d instructions, %d bytes) UNOPTIMIZED\n", filename, assembler->size,
+    printf("%s <%s> (%d instructions, %d bytes)\n", mode & 1 << 8 ? "function" : "main", filename, assembler->size,
            assembler->size * sizeof(int));
-    printf("%d registers, %d variables, %d constants, %d functions\n", assembler->highestRegister, 0,
+    printf("%d registers, %d closures, %d constants, %d functions\n", assembler->highestRegister, assembler->closureIdx,
            assembler->pool.size, assembler->functionsLoaded);
 
     struct s_str **cachedGlobals = malloc(sizeof(struct s_str *) * (assembler->functionsLoaded * 2));
@@ -92,6 +92,13 @@ void sakuraX_writeDisasm(SakuraState *S, struct SakuraAssembly *assembler, const
             i += 3;
             break;
         }
+        case SAKURA_CLOSURE: {
+            printf("    %d\t(%d)\t\tCLOSURE\t\t%d, %d\t\t;; store fn-%d into stack pos %d\n", idx, i,
+                   assembler->instructions[i + 1], assembler->instructions[i + 2], assembler->instructions[i + 2],
+                   assembler->instructions[i + 1]);
+            i += 2;
+            break;
+        }
         case SAKURA_CALL: {
             struct s_str *key = cachedGlobals[assembler->instructions[i + 1]];
             printf("    %d\t(%d)\t\tCALL\t\t%d, %d\t\t;; %.*s(%d args...)\n", idx, i, assembler->instructions[i + 1],
@@ -104,6 +111,15 @@ void sakuraX_writeDisasm(SakuraState *S, struct SakuraAssembly *assembler, const
             cachedGlobals[assembler->instructions[i + 1]] = key;
             printf("    %d\t(%d)\t\tGETGLOBAL\t%d\t\t;; store '%.*s' into stack pos %d\n", idx, i,
                    assembler->instructions[i + 2], key->len, key->str, assembler->instructions[i + 1]);
+            i += 2;
+            break;
+        }
+        case SAKURA_SETGLOBAL: {
+            char *allocVal = sakuraX_readTVal(&assembler->pool.constants[-assembler->instructions[i + 2] - 1]);
+            printf("    %d\t(%d)\t\tSETGLOBAL\t%d, %d\t\t;; sets '%s' from stack pos %d\n", idx, i,
+                   assembler->instructions[i + 1], assembler->instructions[i + 2], allocVal,
+                   assembler->instructions[i + 1]);
+            free(allocVal);
             i += 2;
             break;
         }
@@ -161,5 +177,14 @@ void sakuraX_writeDisasm(SakuraState *S, struct SakuraAssembly *assembler, const
         }
     }
 
-    printf("=================\n");
+    for (size_t i = 0; i < assembler->closureIdx; i++) {
+        char *trueFname = malloc(sizeof(char) * (strlen(filename) + 25));
+        sprintf(trueFname, "%s:fn-%d", filename, i);
+        printf("\n");
+        sakuraX_writeDisasm(S, assembler->closures[i], trueFname, mode | 1 << 8);
+        free(trueFname);
+    }
+
+    if (!(mode & 1 << 8))
+        printf("=================\n");
 }
