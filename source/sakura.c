@@ -59,6 +59,10 @@ SakuraState *sakura_createState() {
 void sakura_destroyState(SakuraState *state) {
     if (state != NULL) {
         sakuraX_destroyTVMap(&state->globals);
+        for (size_t i = 0; i < state->pool.size; i++) {
+            if (state->pool.constants[i].tt == SAKURA_TSTR)
+                s_str_free(&state->pool.constants[i].value.s);
+        }
         free(state->pool.constants);
         state->pool.constants = NULL;
         state->pool.size = 0;
@@ -151,6 +155,13 @@ TValue sakuraY_makeTCFunc(int (*fnPtr)(SakuraState *)) {
     TValue val;
     val.tt = SAKURA_TCFUNC;
     val.value.cfn = fnPtr;
+    return val;
+}
+
+TValue sakuraY_makeTFunc(struct SakuraAssembly *assembly) {
+    TValue val;
+    val.tt = SAKURA_TFUNC;
+    val.value.assembly = assembly;
     return val;
 }
 
@@ -247,8 +258,15 @@ void copyTValue(TValue *dest, TValue *src) {
 void sakuraY_mergePools(SakuraState *S, SakuraConstantPool *pool) {
     S->pool.capacity += pool->capacity;
     S->pool.constants = realloc(S->pool.constants, S->pool.capacity * sizeof(TValue));
-    for (size_t i = 0; i < pool->size; i++) {
+    for (size_t i = 0; i < pool->size; i++)
         copyTValue(&S->pool.constants[S->pool.size + i], &pool->constants[i]);
-    }
     S->pool.size += pool->size;
+}
+
+void sakuraY_mergePoolsA(SakuraConstantPool *into, SakuraConstantPool *from) {
+    into->capacity += from->capacity;
+    into->constants = realloc(into->constants, into->capacity * sizeof(TValue));
+    for (size_t i = 0; i < from->size; i++)
+        copyTValue(&into->constants[into->size + i], &from->constants[i]);
+    into->size += from->size;
 }

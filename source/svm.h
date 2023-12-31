@@ -2,4 +2,5 @@
 
 #include "assembler.h"
 
-void sakuraX_interpret(SakuraState *S, struct SakuraAssembly *assembly);
+int sakuraX_interpretA(SakuraState *S, struct SakuraAssembly *assembly, int offset);
+int sakuraX_interpret(SakuraState *S, struct SakuraAssembly *assembly);

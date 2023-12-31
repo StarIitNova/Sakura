@@ -32,6 +32,7 @@ union SakuraValue {
     double n;                         // TNUMFLT
     struct s_str s;                   // TSTR
     int (*cfn)(struct SakuraState *); // TCFUNC
+    struct SakuraAssembly *assembly;  // TFUNC
     int nil;                          // TNIL
 };
 
@@ -102,10 +103,12 @@ void sakuraX_destroyTVMap(struct TVMap *map);
 #define REMOVE_TAG(value) ((size_t)((value) & 0x1FFFFFFF))
 
 void sakuraY_mergePools(SakuraState *S, SakuraConstantPool *pool);
+void sakuraY_mergePoolsA(SakuraConstantPool *into, SakuraConstantPool *from);
 
 TValue sakuraY_makeTNumber(double value);
 TValue sakuraY_makeTString(struct s_str *value);
 TValue sakuraY_makeTCFunc(int (*fnPtr)(SakuraState *));
+TValue sakuraY_makeTFunc(struct SakuraAssembly *assembly);
 
 void sakura_setGlobal(SakuraState *S, const struct s_str *name);
 

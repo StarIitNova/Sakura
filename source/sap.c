@@ -65,7 +65,7 @@ void sakuraL_loadstring(SakuraState *S, struct s_str *source, int showDisasm) {
 
     if (showDisasm >= 1)
         sakuraX_writeDisasm(S, assembly, "test.sa", showDisasm);
-    sakuraX_interpret(S, assembly);
+    int success = sakuraX_interpret(S, assembly);
 
     sakuraX_freeAssembly(assembly);
 }
