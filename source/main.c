@@ -51,7 +51,7 @@ int main(int argc, const char **argv) {
         return 1;
     }
 
-    int disasmMode = 0;
+    int disasmMode = 0; // 1 << 8 = child assembly, RESERVED/DO NOT USE.
     const char *filename = 0;
     for (int i = 1; i < argc; i++) {
         if (argv[i][0] == '-') {

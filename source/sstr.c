@@ -29,9 +29,11 @@ struct s_str s_str_copy(const struct s_str *sstr) {
 }
 
 void s_str_free(struct s_str *sstr) {
-    free(sstr->str);
-    sstr->str = NULL;
-    sstr->len = 0;
+    if (sstr->str != NULL) {
+        free(sstr->str);
+        sstr->str = NULL;
+        sstr->len = 0;
+    }
 }
 
 struct s_str s_str_concat(const struct s_str *s1, const struct s_str *s2) {

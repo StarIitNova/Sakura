@@ -1,2 +1,5 @@
-let x = 5
-print(x)
+fn abc() {
+    print(123)
+}
+
+abc()

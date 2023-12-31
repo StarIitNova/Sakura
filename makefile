@@ -14,7 +14,7 @@ else
 
 	UNAME_S := $(shell uname -s)
 	ifeq ($(UNAME_S),Linux)
-		CFLAGS += -lm -ldl
+		LDFLAGS += -lm -ldl
 	endif
 endif
 
