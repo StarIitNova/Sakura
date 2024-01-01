@@ -152,31 +152,25 @@ int sakuraX_interpretA(SakuraState *S, struct SakuraAssembly *assembly, int offs
                 int stackidx = S->stackIndex;
                 sakuraY_push(S, sakuraY_makeTNumber(argc));
                 int ret = fn->value.cfn(S);
-                if (ret != 0) {
-                    printf("Error: C function returned non-zero (%d) value\n", ret);
-                    return 1;
-                }
 
-                if (stackidx - S->stackIndex != argc) {
+                if (stackidx - S->stackIndex + ret != argc) {
                     printf("Warning: C function did not pop all arguments off the stack (%d removed, %d expected)\n",
                            stackidx - S->stackIndex, argc);
                 } else {
+                    // TODO: if ret > 0 then pop the return values and push them after popping the function
                     sakuraY_pop(S); // pop the function
                 }
             } else if (fn->tt == SAKURA_TFUNC) {
                 int stackidx = S->stackIndex;
                 sakuraY_push(S, sakuraY_makeTNumber(argc));
                 int ret = sakuraX_interpretA(S, fn->value.assembly, S->stackIndex);
-                if (ret != 0) {
-                    printf("Error: Sakura function returned non-zero (%d) value\n", ret);
-                    return 1;
-                }
 
-                if (stackidx - S->stackIndex != argc) {
+                if (stackidx - S->stackIndex + ret != argc) {
                     printf(
                         "Warning: Sakura function did not pop all arguments off the stack (%d removed, %d expected)\n",
                         stackidx - S->stackIndex, argc);
                 } else {
+                    // TODO: if ret > 0 then pop the return values and push them after popping the function
                     sakuraY_pop(S); // pop the function
                 }
 
