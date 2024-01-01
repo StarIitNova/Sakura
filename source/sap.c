@@ -40,6 +40,31 @@ int sakuraS_print(SakuraState *S) {
     return 0;
 }
 
+int sakuraS_loadstring(SakuraState *S) {
+    int args = sakura_peek(S);
+    sakuraY_pop(S);
+
+    if (args != 1) {
+        printf("Error: expected 1 argument, got %d\n", args);
+        exit(1);
+    }
+
+    struct s_str source = sakura_popString(S);
+
+    // parse the source
+    struct TokenStack *tokens = sakuraY_analyze(S, source);
+    struct NodeStack *nodes = sakuraY_parse(S, tokens);
+    sakuraX_freeTokStack(tokens);
+    struct SakuraAssembly *assembly = sakuraY_assemble(S, nodes);
+    sakuraX_freeNodeStack(nodes);
+
+    // TODO: make the assembly stored in S so it can be freed later
+
+    sakuraY_push(S, sakuraY_makeTFunc(assembly));
+
+    return 1;
+}
+
 void sakuraL_loadStdlib(SakuraState *S) { sakura_register(S, "print", sakuraS_print); }
 
 void sakuraL_loadfile(SakuraState *S, const char *file, int showDisasm) {
