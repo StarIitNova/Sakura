@@ -22,6 +22,15 @@ struct s_str readfile(const char *path) {
     return s;
 }
 
+struct s_str readfile_s(const struct s_str *path) {
+    char *path_c = malloc(path->len + 1);
+    memcpy(path_c, path->str, path->len);
+    path_c[path->len] = '\0';
+    struct s_str s = readfile(path_c);
+    free(path_c);
+    return s;
+}
+
 int writefile(const char *path, const struct s_str *s) {
     FILE *file = fopen(path, "w");
     if (!file) {
