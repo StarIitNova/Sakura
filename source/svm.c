@@ -24,24 +24,6 @@
     }                                                                                                                  \
     i += 3;
 
-void sakuraDEBUG_dumpStack(SakuraState *S) {
-    printf("Stack dump:\n");
-    for (int i = 0; i < S->stackIndex; i++) {
-        printf("  [%d] ", i);
-        if (S->stack[i].tt == SAKURA_TNUMFLT) {
-            printf("%f\n", S->stack[i].value.n);
-        } else if (S->stack[i].tt == SAKURA_TSTR) {
-            printf("%.*s\n", S->stack[i].value.s.len, S->stack[i].value.s.str);
-        } else if (S->stack[i].tt == SAKURA_TCFUNC) {
-            printf("[CFunc %p]\n", S->stack[i].value.cfn);
-        } else if (S->stack[i].tt == SAKURA_TFUNC) {
-            printf("[SakuraFunc '<NIL>']\n");
-        } else {
-            printf("[Unknown]\n");
-        }
-    }
-}
-
 int sakuraX_interpretA(SakuraState *S, struct SakuraAssembly *assembly, int offset) {
     S->currentState = SAKURA_FLAG_RUNTIME;
 
@@ -65,11 +47,13 @@ int sakuraX_interpretA(SakuraState *S, struct SakuraAssembly *assembly, int offs
             i += 2;
             break;
         case SAKURA_SETGLOBAL:
+            // ignore the first argument (store reg) as it is NOT needed
             sakura_setGlobal(S, &assembly->pool.constants[-instructions[i + 2] - 1].value.s);
             i += 2;
             break;
         case SAKURA_GETGLOBAL:
             // ignore the first argument (store reg) as it is NOT needed
+            // printf("function %p pushed\n", S->globals.pairs[instructions[i + 2]].value.value.cfn);
             sakuraY_push(S, S->globals.pairs[instructions[i + 2]].value);
             i += 2;
             break;
@@ -145,7 +129,7 @@ int sakuraX_interpretA(SakuraState *S, struct SakuraAssembly *assembly, int offs
             break;
         }
         case SAKURA_CALL: {
-            int fnLoc = instructions[i + 1] + offset;
+            int fnLoc = instructions[i + 1] + offset + S->internalOffset;
             int argc = instructions[i + 2];
             TValue *fn = &S->stack[fnLoc];
             if (fn->tt == SAKURA_TCFUNC) {
@@ -157,8 +141,7 @@ int sakuraX_interpretA(SakuraState *S, struct SakuraAssembly *assembly, int offs
                     printf("Warning: C function did not pop all arguments off the stack (%d removed, %d expected)\n",
                            stackidx - S->stackIndex, argc);
                 } else {
-                    // TODO: if ret > 0 then pop the return values and push them after popping the function
-                    sakuraY_pop(S); // pop the function
+                    sakuraY_popN(S, fnLoc); // pops the function
                 }
             } else if (fn->tt == SAKURA_TFUNC) {
                 int stackidx = S->stackIndex;
@@ -170,11 +153,9 @@ int sakuraX_interpretA(SakuraState *S, struct SakuraAssembly *assembly, int offs
                         "Warning: Sakura function did not pop all arguments off the stack (%d removed, %d expected)\n",
                         stackidx - S->stackIndex, argc);
                 } else {
-                    // TODO: if ret > 0 then pop the return values and push them after popping the function
-                    sakuraY_pop(S); // pop the function
+                    TValue val = sakuraY_popN(S, fnLoc); // pops the function
+                    sakuraY_attemptFreeTValue(&val);
                 }
-
-                return 1;
             }
             i += 2;
             break;
