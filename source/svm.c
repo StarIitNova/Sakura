@@ -8,7 +8,6 @@
 #include "disasm.h"
 
 #define REGISTER_BINOP(name, operation)                                                                                \
-    reg = instructions[i + 1];                                                                                         \
     TValue val = sakuraY_pop(S);                                                                                       \
     TValue val2 = sakuraY_pop(S);                                                                                      \
     if (val.tt == SAKURA_TNUMFLT) {                                                                                    \
@@ -30,7 +29,7 @@ int sakuraX_interpretA(SakuraState *S, struct SakuraAssembly *assembly, int offs
     sakuraY_mergePools(S, &assembly->pool);
 
     if (offset > 0) {
-        int argcA = sakuraY_peek(S)->value.n;
+        // int argcA = sakuraY_peek(S)->value.n;
         // printf("interpretA called with %d args\n", argcA);
         // sakuraDEBUG_dumpStack(S);
     }
@@ -39,7 +38,6 @@ int sakuraX_interpretA(SakuraState *S, struct SakuraAssembly *assembly, int offs
 
     int *instructions = assembly->instructions;
     for (size_t i = 0; i < assembly->size; i++) {
-        int reg = -1;
         switch (instructions[i]) {
         case SAKURA_LOADK:
             // ignore the first argument (store reg) as it is NOT needed
@@ -69,7 +67,6 @@ int sakuraX_interpretA(SakuraState *S, struct SakuraAssembly *assembly, int offs
             i += 2;
             break;
         case SAKURA_ADD: {
-            reg = instructions[i + 1];
             TValue val = sakuraY_pop(S);
             TValue val2 = sakuraY_pop(S);
             if (val.tt == SAKURA_TNUMFLT) {
@@ -177,6 +174,39 @@ int sakuraX_interpretA(SakuraState *S, struct SakuraAssembly *assembly, int offs
             }
             break;
         }
+        case SAKURA_NEWTABLE: {
+            TValue val = sakuraY_makeTTable();
+            sakuraY_push(S, val);
+            i += 2;
+            break;
+        }
+        case SAKURA_SETTABLE: {
+            int tblLocation = instructions[i + 1];
+            int val1 = instructions[i + 2];
+            int val2 = instructions[i + 3];
+
+            TValue valA, valB;
+            if (val1 < 0) {
+                valA = assembly->pool.constants[-val1 - 1];
+            } else {
+                valA = sakuraY_pop(S);
+            }
+
+            if (val2 < 0) {
+                valB = assembly->pool.constants[-val2 - 1];
+            } else {
+                valB = sakuraY_pop(S);
+            }
+
+            if (S->stack[tblLocation].tt != SAKURA_TTABLE) {
+                printf("Error: attempted to set table value on non-table\n");
+                exit(1);
+            }
+
+            sakuraX_setTTable(S->stack[tblLocation].value.table, &valA, &valB);
+            i += 3;
+            break;
+        }
         case SAKURA_RETURN: {
             if (offset > 0) {
                 for (int i = 0; i < S->stackIndex - preStackIdx; i++) {
@@ -187,7 +217,7 @@ int sakuraX_interpretA(SakuraState *S, struct SakuraAssembly *assembly, int offs
             break;
         }
         default:
-            printf("Error: unknown/unimplemented runtime instruction '%d' @ %d\n", instructions[i], i);
+            printf("Error: unknown/unimplemented runtime instruction '%d' @ %lld\n", instructions[i], i);
             break;
         }
     }
