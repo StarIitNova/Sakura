@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "assembler.h"
+#include "stable.h"
 
 unsigned int hash(const char *key, size_t len, size_t capacity) {
     unsigned int hashValue = 5381;
@@ -94,6 +95,14 @@ void sakuraDEBUG_dumpStack(SakuraState *S) {
         } else {
             printf("[Unknown]\n");
         }
+    }
+}
+
+void sakuraDEBUG_dumpTokens(struct TokenStack *tokens) {
+    printf("Tokens:\n");
+    for (size_t i = 0; i < tokens->size; i++) {
+        struct Token *token = tokens->tokens[i];
+        printf("    [%d]:\t'%.*s'\n", token->type, (int)token->length, token->start);
     }
 }
 
@@ -206,6 +215,13 @@ TValue sakuraY_makeTFunc(struct SakuraAssembly *assembly) {
     TValue val;
     val.tt = SAKURA_TFUNC;
     val.value.assembly = assembly;
+    return val;
+}
+
+TValue sakuraY_makeTTable() {
+    TValue val;
+    val.tt = SAKURA_TTABLE;
+    val.value.table = sakuraX_initializeTTable();
     return val;
 }
 
@@ -329,4 +345,49 @@ void sakuraY_mergePoolsA(SakuraConstantPool *into, SakuraConstantPool *from) {
     for (size_t i = 0; i < from->size; i++)
         copyTValue(&into->constants[into->size + i], &from->constants[i]);
     into->size += from->size;
+}
+
+unsigned int sakuraX_hashTValue(const TValue *key, size_t capacity) {
+    unsigned int hashValue = 0;
+    hashValue ^= key->tt;
+
+    switch (key->tt) {
+    case SAKURA_TNUMFLT:
+        hashValue ^= (unsigned int)key->value.n;
+        break;
+    case SAKURA_TSTR:
+        for (size_t i = 0; i < key->value.s.len; i++)
+            hashValue ^= key->value.s.str[i];
+        break;
+    case SAKURA_TCFUNC:
+        hashValue ^= (unsigned int)(intptr_t)key->value.cfn;
+        break;
+    case SAKURA_TFUNC:
+        hashValue ^= (unsigned int)(intptr_t)key->value.assembly;
+        break;
+    }
+
+    return hashValue % capacity;
+}
+
+int sakuraX_compareTValues(const TValue *a, const TValue *b) {
+    if (a->tt != b->tt)
+        return 0;
+
+    switch (a->tt) {
+    case SAKURA_TNUMFLT:
+        return a->value.n == b->value.n;
+    case SAKURA_TSTR:
+        return a->value.s.len == b->value.s.len && memcmp(a->value.s.str, b->value.s.str, a->value.s.len) == 0;
+    case SAKURA_TCFUNC:
+        return a->value.cfn == b->value.cfn;
+    case SAKURA_TFUNC:
+        return a->value.assembly == b->value.assembly;
+    case SAKURA_TNIL:
+        return 1;
+    case SAKURA_TTABLE:
+        return a->value.table == b->value.table;
+    }
+
+    return 0;
 }
