@@ -1,5 +1,0 @@
-fn abc() {
-    print(123)
-}
-
-abc()
