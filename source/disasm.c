@@ -9,7 +9,7 @@ char *sakuraX_readTVal(TValue *val) {
         sprintf(allocVal, "%f", val->value.n);
         break;
     case SAKURA_TSTR:
-        sprintf(allocVal, "%.*s", val->value.s.len, val->value.s.str);
+        sprintf(allocVal, "'%.*s'", val->value.s.len, val->value.s.str);
         break;
     default:
         sprintf(allocVal, "[Unknown T%d D%f @ %p (%p)]", val->tt, val->value.n, val, &val->tt);
@@ -20,6 +20,8 @@ char *sakuraX_readTVal(TValue *val) {
 }
 
 void sakuraX_writeDisasm(SakuraState *S, struct SakuraAssembly *assembler, const char *filename, int mode) {
+    struct s_str basicCall = s_str("loaded_function");
+
     printf("%s <%s> (%d instructions, %d bytes)\n", mode & 1 << 8 ? "function" : "main", filename, assembler->size,
            assembler->size * sizeof(int));
     printf("%d registers, %d closures, %d constants, %d functions\n", assembler->highestRegister, assembler->closureIdx,
@@ -101,8 +103,11 @@ void sakuraX_writeDisasm(SakuraState *S, struct SakuraAssembly *assembler, const
         }
         case SAKURA_CALL: {
             struct s_str *key = cachedGlobals[assembler->instructions[i + 1]];
+            if (key == NULL)
+                key = &basicCall;
             printf("    %d\t(%d)\t\tCALL\t\t%d, %d\t\t;; %.*s(%d args...)\n", idx, i, assembler->instructions[i + 1],
                    assembler->instructions[i + 2], key->len, key->str, assembler->instructions[i + 2]);
+            cachedGlobals[assembler->instructions[i + 1]] = NULL;
             i += 2;
             break;
         }
@@ -187,4 +192,6 @@ void sakuraX_writeDisasm(SakuraState *S, struct SakuraAssembly *assembler, const
 
     if (!(mode & 1 << 8))
         printf("=================\n");
+
+    s_str_free(&basicCall);
 }
