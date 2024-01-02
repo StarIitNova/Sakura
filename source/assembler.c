@@ -97,7 +97,24 @@ void sakuraV_visitBinary(SakuraState *S, struct SakuraAssembly *assembly, struct
 void sakuraV_visitNumber(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node) {
     // store the value in the constant pool
     int index = sakuraX_pushKNumber(assembly, node->storageValue);
-    // load the value into the next register (note this is actually the stack, this value is NOT used)
+    // load the value into the stack
+    size_t reg = assembly->registers++;
+    SakuraAssembly_push3(assembly, SAKURA_LOADK, reg, index);
+    // store the register location in the node
+    node->leftLocation = reg;
+
+    if (reg >= assembly->highestRegister) {
+        assembly->highestRegister = reg;
+    }
+}
+
+void sakuraV_visitString(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node) {
+    // store the value in the constant pool
+    struct s_str val;
+    val.str = (char *)node->token->start;
+    val.len = node->token->length;
+    int index = sakuraX_pushKString(assembly, &val);
+    // load the value into the stack
     size_t reg = assembly->registers++;
     SakuraAssembly_push3(assembly, SAKURA_LOADK, reg, index);
     // store the register location in the node
@@ -194,6 +211,31 @@ void sakuraV_visitCall(SakuraState *S, struct SakuraAssembly *assembly, struct N
     TValue *func = sakuraX_TVMapGet(&S->globals, &name);
     int idx = sakuraX_TVMapGetIndex(&S->globals, &name);
 
+    if (idx == -1) {
+        for (size_t i = 0; i < S->localsSize; i++) {
+            if (s_str_cmp(&name, &S->locals[i]) == 0) {
+                // load the value into the next register
+                size_t reg = assembly->registers++;
+
+                if (i != reg)
+                    SakuraAssembly_push3(assembly, SAKURA_MOVE, reg, i);
+
+                if (reg >= assembly->highestRegister) {
+                    assembly->highestRegister = reg;
+                }
+
+                for (size_t i = 0; i < node->argCount; i++) {
+                    sakuraV_visitNode(S, assembly, node->args[i]);
+                }
+
+                SakuraAssembly_push3(assembly, SAKURA_CALL, reg, node->argCount);
+                assembly->registers -= (node->argCount + 1);
+
+                return;
+            }
+        }
+    }
+
     // check if the function exists
     if (idx == -1) {
         printf("Error: function '%.*s' does not exist\n", name.len, name.str);
@@ -211,6 +253,10 @@ void sakuraV_visitCall(SakuraState *S, struct SakuraAssembly *assembly, struct N
     assembly->functionsLoaded++;
     SakuraAssembly_push3(assembly, SAKURA_GETGLOBAL, reg, idx);
 
+    if (reg >= assembly->highestRegister) {
+        assembly->highestRegister = reg;
+    }
+
     // bytecode to push arguments onto the stack
     for (size_t i = 0; i < node->argCount; i++) {
         sakuraV_visitNode(S, assembly, node->args[i]);
@@ -218,10 +264,6 @@ void sakuraV_visitCall(SakuraState *S, struct SakuraAssembly *assembly, struct N
 
     SakuraAssembly_push3(assembly, SAKURA_CALL, reg, node->argCount);
     assembly->registers -= (node->argCount + 1);
-
-    if (reg >= assembly->highestRegister) {
-        assembly->highestRegister = reg;
-    }
 }
 
 void sakuraV_visitIf(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node) {
@@ -310,6 +352,9 @@ void sakuraV_visitNode(SakuraState *S, struct SakuraAssembly *assembly, struct N
         break;
     case SAKURA_TOKEN_NUMBER:
         sakuraV_visitNumber(S, assembly, node);
+        break;
+    case SAKURA_TOKEN_STRING:
+        sakuraV_visitString(S, assembly, node);
         break;
     case SAKURA_NODE_CALL:
         sakuraV_visitCall(S, assembly, node);
