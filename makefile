@@ -2,7 +2,20 @@ CC=gcc
 
 TARGET=sakura
 
-CFLAGS=-g -Og -Wall -DSAKURA_VERSION=\"$(APP_VERSION)\" # use -fsanitize=address for heap debugging
+CWARNSCPP=-Wfatal-errors -Wextra -Wshadow -Wundef -Wwrite-strings -Wredundant-decls\
+		  -Wdisabled-optimization -Wdouble-promotion -Wmissing-declarations
+CWARNSGCC=-Wlogical-op -Wno-aggressive-loop-optimizations
+CWARNSC=-Wdeclaration-after-statement -Wmissing-prototypes -Wnested-externs -Wstrict-prototypes -Wc++-compat -Wold-style-definition
+
+CWARNS=$(CWARNSCPP) $(CWARNSGCC) $(CWARNSC)
+
+# use -fsanitize=address for heap debugging
+DEBUGCFLAGS=-g -Og
+RELEASECFLAGS=-O3
+
+MYCFLAGS=$(CWARNS) $(DEBUGCFLAGS) -std=c99 -DSAKURA_VERSION=\"$(APP_VERSION)\"
+
+CFLAGS=-Wall $(MYCFLAGS) -fno-stack-protector -fno-common -march=native
 LDFLAGS=
 .PHONY: all
 
