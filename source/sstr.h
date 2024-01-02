@@ -17,6 +17,10 @@ struct s_str {
 
 #define s_str(s) s_str_new(s)
 
+#ifndef NPOS
+#define NPOS (size_t)(-1)
+#endif
+
 struct s_str s_str(const char *str);
 struct s_str s_str_n(const char *str, unsigned int len);
 struct s_str s_str_copy(const struct s_str *sstr);

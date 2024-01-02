@@ -5,15 +5,15 @@
 #include "assembler.h"
 #include "stable.h"
 
-unsigned int hash(const char *key, size_t len, size_t capacity) {
+unsigned int sakuraX_hashForTVMap(const char *key, size_t len, size_t capacity) {
     unsigned int hashValue = 5381;
     for (size_t i = 0; i < len; i++)
         hashValue = (hashValue << 5) + hashValue + key[i];
     return hashValue % capacity;
 }
 
-SakuraState *sakura_createState() {
-    SakuraState *state = malloc(sizeof(SakuraState));
+SakuraState *sakura_createState(void) {
+    SakuraState *state = (SakuraState *)malloc(sizeof(SakuraState));
     if (state != NULL) {
         state->stackIndex = 0;
         state->currentState = SAKURA_FLAG_ENDED;
@@ -21,13 +21,13 @@ SakuraState *sakura_createState() {
 
         state->pool.size = 0;
         state->pool.capacity = 8;
-        state->pool.constants = malloc(state->pool.capacity * sizeof(TValue));
+        state->pool.constants = (TValue *)malloc(state->pool.capacity * sizeof(TValue));
 
-        state->callStack = malloc(128 * sizeof(int));
+        state->callStack = (int *)malloc(128 * sizeof(int));
         state->callStackSize = 128;
         state->callStackIndex = 0;
 
-        state->locals = malloc(128 * sizeof(struct s_str));
+        state->locals = (struct s_str *)malloc(128 * sizeof(struct s_str));
         state->localsSize = 128;
 
         for (size_t i = 0; i < state->localsSize; i++) {
@@ -107,7 +107,7 @@ void sakuraDEBUG_dumpTokens(struct TokenStack *tokens) {
 }
 
 void sakuraX_initializeTVMap(struct TVMap *map, size_t initCapacity) {
-    map->pairs = malloc(initCapacity * sizeof(struct TVMapPair));
+    map->pairs = (struct TVMapPair *)malloc(initCapacity * sizeof(struct TVMapPair));
     map->size = 0;
     map->capacity = initCapacity;
 
@@ -122,7 +122,7 @@ void sakuraX_resizeTVMap(struct TVMap *map, size_t newCapacity) {
     struct TVMapPair *oldPairs = map->pairs;
     size_t oldCapacity = map->capacity;
 
-    map->pairs = malloc(newCapacity * sizeof(struct TVMapPair));
+    map->pairs = (struct TVMapPair *)malloc(newCapacity * sizeof(struct TVMapPair));
     map->size = 0;
     map->capacity = newCapacity;
 
@@ -143,11 +143,13 @@ void sakuraX_resizeTVMap(struct TVMap *map, size_t newCapacity) {
 }
 
 void sakuraX_TVMapInsert(struct TVMap *map, const struct s_str *key, TValue value) {
+    size_t idx;
+
     if ((double)map->size / map->capacity >= 0.5) {
         sakuraX_resizeTVMap(map, map->capacity * 2);
     }
 
-    size_t idx = hash(key->str, key->len, map->capacity);
+    idx = sakuraX_hashForTVMap(key->str, key->len, map->capacity);
     map->pairs[idx].key = s_str_copy(key);
     map->pairs[idx].value = value;
     map->pairs[idx].init = 1;
@@ -155,17 +157,17 @@ void sakuraX_TVMapInsert(struct TVMap *map, const struct s_str *key, TValue valu
 }
 
 int sakuraX_TVMapGetIndex(struct TVMap *map, const struct s_str *key) {
-    size_t idx = hash(key->str, key->len, map->capacity);
-    return map->pairs[idx].init == 1 ? idx : -1;
+    size_t idx = sakuraX_hashForTVMap(key->str, key->len, map->capacity);
+    return map->pairs[idx].init == 1 ? (int)idx : -1;
 }
 
 TValue *sakuraX_TVMapGet(struct TVMap *map, const struct s_str *key) {
-    size_t idx = hash(key->str, key->len, map->capacity);
+    size_t idx = sakuraX_hashForTVMap(key->str, key->len, map->capacity);
     return map->pairs[idx].init == 1 ? &map->pairs[idx].value : NULL;
 }
 
 TValue *sakuraX_TVMapGet_c(struct TVMap *map, const char *key) {
-    size_t idx = hash(key, strlen(key), map->capacity);
+    size_t idx = sakuraX_hashForTVMap(key, strlen(key), map->capacity);
     return map->pairs[idx].init == 1 ? &map->pairs[idx].value : NULL;
 }
 
@@ -218,7 +220,7 @@ TValue sakuraY_makeTFunc(struct SakuraAssembly *assembly) {
     return val;
 }
 
-TValue sakuraY_makeTTable() {
+TValue sakuraY_makeTTable(void) {
     TValue val;
     val.tt = SAKURA_TTABLE;
     val.value.table = sakuraX_initializeTTable();
@@ -252,12 +254,14 @@ TValue sakuraY_pop(SakuraState *S) {
 
 // make a function to pop a specific index and shift everything down
 TValue sakuraY_popN(SakuraState *S, int n) {
+    TValue val;
+
     if (S->stackIndex <= n) {
         printf("Error: stack underflow\n");
         exit(1);
     }
 
-    TValue val = S->stack[n];
+    val = S->stack[n];
 
     for (int i = n; i < S->stackIndex - 1; i++)
         S->stack[i] = S->stack[i + 1];
@@ -306,10 +310,10 @@ struct s_str sakura_popString(SakuraState *S) {
 }
 
 void sakuraY_storeLocal(SakuraState *S, const struct s_str *name, int idx) {
-    if (idx >= S->localsSize) {
-        S->locals = realloc(S->locals, (idx + 1) * sizeof(struct s_str));
+    if (idx >= (int)S->localsSize) {
+        S->locals = (struct s_str *)realloc(S->locals, (idx + 1) * sizeof(struct s_str));
 
-        for (size_t i = S->localsSize; i < idx + 1; i++) {
+        for (int i = (int)S->localsSize; i < idx + 1; i++) {
             S->locals[i].str = NULL;
             S->locals[i].len = 0;
         }
@@ -328,12 +332,13 @@ void copyTValue(TValue *dest, TValue *src) {
         dest->value.s = s_str_copy(&src->value.s);
     } else {
         // Handle other types as needed
+        dest->value = src->value;
     }
 }
 
 void sakuraY_mergePools(SakuraState *S, SakuraConstantPool *pool) {
     S->pool.capacity += pool->capacity;
-    S->pool.constants = realloc(S->pool.constants, S->pool.capacity * sizeof(TValue));
+    S->pool.constants = (TValue *)realloc(S->pool.constants, S->pool.capacity * sizeof(TValue));
     for (size_t i = 0; i < pool->size; i++)
         copyTValue(&S->pool.constants[S->pool.size + i], &pool->constants[i]);
     S->pool.size += pool->size;
@@ -341,7 +346,7 @@ void sakuraY_mergePools(SakuraState *S, SakuraConstantPool *pool) {
 
 void sakuraY_mergePoolsA(SakuraConstantPool *into, SakuraConstantPool *from) {
     into->capacity += from->capacity;
-    into->constants = realloc(into->constants, into->capacity * sizeof(TValue));
+    into->constants = (TValue *)realloc(into->constants, into->capacity * sizeof(TValue));
     for (size_t i = 0; i < from->size; i++)
         copyTValue(&into->constants[into->size + i], &from->constants[i]);
     into->size += from->size;
@@ -356,7 +361,7 @@ unsigned int sakuraX_hashTValue(const TValue *key, size_t capacity) {
         hashValue ^= (unsigned int)key->value.n;
         break;
     case SAKURA_TSTR:
-        for (size_t i = 0; i < key->value.s.len; i++)
+        for (int i = 0; i < key->value.s.len; i++)
             hashValue ^= key->value.s.str[i];
         break;
     case SAKURA_TCFUNC:

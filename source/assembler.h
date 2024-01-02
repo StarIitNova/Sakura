@@ -80,6 +80,21 @@ struct SakuraAssembly {
 
 struct SakuraAssembly *sakuraY_assemble(SakuraState *S, struct NodeStack *nodes);
 
+// visitor functions
+void sakuraV_visitNode(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node);
+void sakuraV_visitBlock(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node);
+void sakuraV_visitUnary(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node);
+void sakuraV_visitBinary(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node);
+void sakuraV_visitCall(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node);
+void sakuraV_visitFunction(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node);
+void sakuraV_visitIf(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node);
+void sakuraV_visitString(SakuraState *, struct SakuraAssembly *assembly, struct Node *node);
+void sakuraV_visitNumber(SakuraState *, struct SakuraAssembly *assembly, struct Node *node);
+void sakuraV_visitIdentifier(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node);
+void sakuraV_visitWhile(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node);
+void sakuraV_visitVar(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node);
+void sakuraV_visitTable(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node);
+
 #define SakuraAssembly() SakuraAssembly_new(1)
 
 struct SakuraAssembly *SakuraAssembly_new(int fullSetup);

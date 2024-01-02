@@ -24,6 +24,9 @@
     i += 3;
 
 int sakuraX_interpretA(SakuraState *S, struct SakuraAssembly *assembly, int offset) {
+    int *instructions;
+    int preStackIdx;
+
     S->currentState = SAKURA_FLAG_RUNTIME;
 
     sakuraY_mergePools(S, &assembly->pool);
@@ -34,9 +37,8 @@ int sakuraX_interpretA(SakuraState *S, struct SakuraAssembly *assembly, int offs
         // sakuraDEBUG_dumpStack(S);
     }
 
-    int preStackIdx = S->stackIndex;
-
-    int *instructions = assembly->instructions;
+    preStackIdx = S->stackIndex;
+    instructions = assembly->instructions;
     for (size_t i = 0; i < assembly->size; i++) {
         switch (instructions[i]) {
         case SAKURA_LOADK:
@@ -126,29 +128,31 @@ int sakuraX_interpretA(SakuraState *S, struct SakuraAssembly *assembly, int offs
             break;
         }
         case SAKURA_CALL: {
+            int stackIdx, ret;
+
             int fnLoc = instructions[i + 1] + offset + S->internalOffset;
             int argc = instructions[i + 2];
             TValue *fn = &S->stack[fnLoc];
             if (fn->tt == SAKURA_TCFUNC) {
-                int stackidx = S->stackIndex;
+                stackIdx = S->stackIndex;
                 sakuraY_push(S, sakuraY_makeTNumber(argc));
-                int ret = fn->value.cfn(S);
+                ret = fn->value.cfn(S);
 
-                if (stackidx - S->stackIndex + ret != argc) {
+                if (stackIdx - S->stackIndex + ret != argc) {
                     printf("Warning: C function did not pop all arguments off the stack (%d removed, %d expected)\n",
-                           stackidx - S->stackIndex, argc);
+                           stackIdx - S->stackIndex, argc);
                 } else {
                     sakuraY_popN(S, fnLoc); // pops the function
                 }
             } else if (fn->tt == SAKURA_TFUNC) {
-                int stackidx = S->stackIndex;
+                stackIdx = S->stackIndex;
                 sakuraY_push(S, sakuraY_makeTNumber(argc));
-                int ret = sakuraX_interpretA(S, fn->value.assembly, S->stackIndex);
+                ret = sakuraX_interpretA(S, fn->value.assembly, S->stackIndex);
 
-                if (stackidx - S->stackIndex + ret != argc) {
+                if (stackIdx - S->stackIndex + ret != argc) {
                     printf(
                         "Warning: Sakura function did not pop all arguments off the stack (%d removed, %d expected)\n",
-                        stackidx - S->stackIndex, argc);
+                        stackIdx - S->stackIndex, argc);
                 } else {
                     TValue val = sakuraY_popN(S, fnLoc); // pops the function
                     sakuraY_attemptFreeTValue(&val);
@@ -209,7 +213,7 @@ int sakuraX_interpretA(SakuraState *S, struct SakuraAssembly *assembly, int offs
         }
         case SAKURA_RETURN: {
             if (offset > 0) {
-                for (int i = 0; i < S->stackIndex - preStackIdx; i++) {
+                for (int range = 0; range < S->stackIndex - preStackIdx; range++) {
                     sakuraY_pop(S);
                 }
             }

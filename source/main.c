@@ -9,8 +9,12 @@
 #define SAKURA_VERSION "UNKNOWN"
 #endif
 
+void onSignal(int signum);
+
 #ifdef _WIN32
 #include <Windows.h>
+
+LONG WINAPI CriticalExceptionHandler(EXCEPTION_POINTERS *ExceptionInfo);
 
 LONG WINAPI CriticalExceptionHandler(EXCEPTION_POINTERS *ExceptionInfo) {
     if (ExceptionInfo->ExceptionRecord->ExceptionCode == STATUS_HEAP_CORRUPTION) {
@@ -40,6 +44,10 @@ void onSignal(int signum) {
 }
 
 int main(int argc, const char **argv) {
+    SakuraState *S;
+    int disasmMode = 0; // 1 << 8 = child assembly, RESERVED/DO NOT USE.
+    const char *filename = 0;
+
     signal(SIGSEGV, onSignal);
 
 #ifdef _WIN32
@@ -51,8 +59,6 @@ int main(int argc, const char **argv) {
         return 1;
     }
 
-    int disasmMode = 0; // 1 << 8 = child assembly, RESERVED/DO NOT USE.
-    const char *filename = 0;
     for (int i = 1; i < argc; i++) {
         if (argv[i][0] == '-') {
             if (strcmp(argv[i], "-h") == 0) {
@@ -79,10 +85,8 @@ int main(int argc, const char **argv) {
         return 1;
     }
 
-    SakuraState *S = sakura_createState();
-
+    S = sakura_createState();
     sakuraL_loadfile(S, filename, disasmMode);
-
     sakura_destroyState(S);
 
     return 0;

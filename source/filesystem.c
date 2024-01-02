@@ -5,15 +5,17 @@
 #include <string.h>
 
 struct s_str readfile(const char *path) {
+    char temp[1024];
+    struct s_str s, ns;
     FILE *file = fopen(path, "r");
+
     if (!file) {
         return SI_NULL_STR;
     }
 
-    struct s_str s = S_NULL_STR;
-    char temp[1024];
+    s = (struct s_str)S_NULL_STR;
     while (fgets(temp, 1024, file)) {
-        struct s_str ns = s_str_concat_c(&s, temp);
+        ns = s_str_concat_c(&s, temp);
         free(s.str);
         s = ns;
     }
@@ -23,10 +25,11 @@ struct s_str readfile(const char *path) {
 }
 
 struct s_str readfile_s(const struct s_str *path) {
-    char *path_c = malloc(path->len + 1);
+    struct s_str s;
+    char *path_c = (char *)malloc(path->len + 1);
     memcpy(path_c, path->str, path->len);
     path_c[path->len] = '\0';
-    struct s_str s = readfile(path_c);
+    s = readfile(path_c);
     free(path_c);
     return s;
 }

@@ -23,6 +23,8 @@
 
 typedef unsigned short SakuraFlag;
 
+#define NPOS (size_t)(-1)
+
 struct SakuraState;
 struct SakuraTTable;
 

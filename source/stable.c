@@ -2,14 +2,14 @@
 
 #include <stdlib.h>
 
-struct SakuraTTable *sakuraX_initializeTTable() {
-    struct SakuraTTable *table = malloc(sizeof(struct SakuraTTable));
+struct SakuraTTable *sakuraX_initializeTTable(void) {
+    struct SakuraTTable *table = (struct SakuraTTable *)malloc(sizeof(struct SakuraTTable));
     if (table == NULL) {
         printf("Error: failed to allocate memory for table\n");
         exit(1);
     }
 
-    table->hashPart = calloc(8, sizeof(struct TTableHashEntry));
+    table->hashPart = (struct TTableHashEntry **)calloc(8, sizeof(struct TTableHashEntry *));
     if (table->hashPart == NULL) {
         printf("Error: failed to allocate memory for table\n");
         free(table);
@@ -23,7 +23,8 @@ struct SakuraTTable *sakuraX_initializeTTable() {
 }
 
 void sakuraX_resizeTTable(struct SakuraTTable *table, size_t newCapacity) {
-    struct TTableHashEntry **newHashPart = calloc(newCapacity, sizeof(struct TTableHashEntry));
+    struct TTableHashEntry **newHashPart =
+        (struct TTableHashEntry **)calloc(newCapacity, sizeof(struct TTableHashEntry));
     if (newHashPart == NULL) {
         printf("Error: failed to allocate memory for table\n");
         exit(1);
@@ -49,8 +50,9 @@ void sakuraX_resizeTTable(struct SakuraTTable *table, size_t newCapacity) {
 
 void sakuraX_setTTable(struct SakuraTTable *table, const TValue *key, const TValue *value) {
     size_t hashIdx = sakuraX_hashTValue(key, table->capacity);
+    struct TTableHashEntry *entry, *newEntry;
 
-    struct TTableHashEntry *entry = table->hashPart[hashIdx];
+    entry = table->hashPart[hashIdx];
     while (entry != NULL) {
         if (sakuraX_compareTValues(&entry->key, key)) {
             entry->value = *value;
@@ -60,7 +62,7 @@ void sakuraX_setTTable(struct SakuraTTable *table, const TValue *key, const TVal
         entry = entry->next;
     }
 
-    struct TTableHashEntry *newEntry = malloc(sizeof(struct TTableHashEntry));
+    newEntry = (struct TTableHashEntry *)malloc(sizeof(struct TTableHashEntry));
     if (newEntry == NULL) {
         printf("Error: failed to allocate memory for table\n");
         exit(1);
@@ -72,16 +74,18 @@ void sakuraX_setTTable(struct SakuraTTable *table, const TValue *key, const TVal
     table->hashPart[hashIdx] = newEntry;
     table->size++;
 
-    if ((double)table->size / table->capacity > 0.75) {
+    if ((double)table->size / (double)table->capacity > 0.75) {
         size_t newCapacity = table->capacity * 2;
         sakuraX_resizeTTable(table, newCapacity);
     }
 }
 
 TValue sakuraX_getTTable(struct SakuraTTable *table, const TValue *key) {
+    TValue defaultValue = {SAKURA_TNIL, {.nil = 1}};
     size_t hashIdx = sakuraX_hashTValue(key, table->capacity);
+    struct TTableHashEntry *entry;
 
-    struct TTableHashEntry *entry = table->hashPart[hashIdx];
+    entry = table->hashPart[hashIdx];
     while (entry != NULL) {
         if (sakuraX_compareTValues(&entry->key, key))
             return entry->value;
@@ -89,15 +93,14 @@ TValue sakuraX_getTTable(struct SakuraTTable *table, const TValue *key) {
         entry = entry->next;
     }
 
-    TValue defaultValue = {SAKURA_TNIL, {.nil = 1}};
     return defaultValue;
 }
 
 void sakuraX_freeTTable(struct SakuraTTable *table) {
     for (size_t i = 0; i < table->capacity; ++i) {
-        struct TTableHashEntry *entry = table->hashPart[i];
+        struct TTableHashEntry *entry = table->hashPart[i], *next;
         while (entry != NULL) {
-            struct TTableHashEntry *next = entry->next;
+            next = entry->next;
             free(entry);
             entry = next;
         }
