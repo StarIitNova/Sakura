@@ -35,8 +35,9 @@ struct SakuraAssembly {
 #define SAKURA_SETGLOBAL 4 // setglobal a, b -> sets the global at index a to b
 
 // Table Operations
-#define SAKURA_GETTABLE 5 // gettable a, b, c -> loads the value at index c in the table at index b into a
-#define SAKURA_SETTABLE 6 // settable a, b, c -> sets the value at index c in the table at index b to a
+#define SAKURA_NEWTABLE 33 // newtable a, b -> creates a new table with b size and stores it in a
+#define SAKURA_GETTABLE 5  // gettable a, b, c -> loads the value at index b in the table at index a into c
+#define SAKURA_SETTABLE 6  // settable a, b, c -> sets the value at index b in the table at index a to c
 
 // Function/Closure Operations
 #define SAKURA_CLOSURE 7 // closure a, b -> creates a closure from the function at index b and stores it in a

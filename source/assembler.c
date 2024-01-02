@@ -89,7 +89,7 @@ void sakuraV_visitBinary(SakuraState *S, struct SakuraAssembly *assembly, struct
         break;
     default:
         printf("Error: unknown binary operation '%d' in node '%d' ('%.*s' = ?)\n", node->token->type, node->type,
-               node->token->length, node->token->start);
+               (int)node->token->length, node->token->start);
         break;
     }
 }
@@ -132,7 +132,6 @@ void sakuraV_visitIdentifier(SakuraState *S, struct SakuraAssembly *assembly, st
     name.len = node->token->length;
 
     // get the variable from the globals table
-    TValue *val = sakuraX_TVMapGet(&S->globals, &name);
     int idx = sakuraX_TVMapGetIndex(&S->globals, &name);
 
     // check if the variable exists
@@ -337,9 +336,42 @@ void sakuraV_visitVar(SakuraState *S, struct SakuraAssembly *assembly, struct No
     // push the value onto the stack
     size_t reg = assembly->registers;
     sakuraV_visitNode(S, assembly, node->left);
+    assembly->registers--;
 
     // store the register location in the node
     sakuraY_storeLocal(S, &name, reg);
+}
+
+void sakuraV_visitTable(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node) {
+    // create a new table
+    size_t reg = assembly->registers++;
+    SakuraAssembly_push3(assembly, SAKURA_NEWTABLE, reg, node->argCount);
+
+    // store the register location in the node
+    node->leftLocation = reg;
+
+    if (reg >= assembly->highestRegister) {
+        assembly->highestRegister = reg;
+    }
+
+    // bytecode to set the table keys
+    size_t keyIdx = 0;
+    for (size_t i = 0; i < node->argCount; i++) {
+        if (node->keys[i] == NULL) {
+            size_t idx = keyIdx++;
+            // push idx as a constant and use that
+            int index = sakuraX_pushKNumber(assembly, idx);
+            sakuraV_visitNode(S, assembly, node->args[i]);
+            SakuraAssembly_push4(assembly, SAKURA_SETTABLE, reg, index, node->args[i]->leftLocation);
+            assembly->registers--;
+        } else {
+            sakuraV_visitNode(S, assembly, node->keys[i]);
+            sakuraV_visitNode(S, assembly, node->args[i]);
+            SakuraAssembly_push4(assembly, SAKURA_SETTABLE, reg, node->keys[i]->leftLocation,
+                                 node->args[i]->leftLocation);
+            assembly->registers -= 2;
+        }
+    }
 }
 
 void sakuraV_visitNode(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node) {
@@ -376,6 +408,9 @@ void sakuraV_visitNode(SakuraState *S, struct SakuraAssembly *assembly, struct N
         break;
     case SAKURA_TOKEN_IDENTIFIER:
         sakuraV_visitIdentifier(S, assembly, node);
+        break;
+    case SAKURA_NODE_TABLE:
+        sakuraV_visitTable(S, assembly, node);
         break;
     default:
         printf("Error: unknown node type '%d'\n", node->type);
