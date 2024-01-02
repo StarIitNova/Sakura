@@ -4,6 +4,7 @@
     "stdio.h": "c",
     "type_traits": "c",
     "sakura.h": "c",
-    "typeinfo": "c"
-}
+    "typeinfo": "c",
+    "sstructures.h": "c"
+  }
 }

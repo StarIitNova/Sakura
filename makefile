@@ -2,7 +2,7 @@ CC=gcc
 
 TARGET=sakura
 
-CFLAGS=-g -Og -DSAKURA_VERSION=\"$(APP_VERSION)\" # use -fsanitize=address for heap debugging
+CFLAGS=-g -Og -Wall -DSAKURA_VERSION=\"$(APP_VERSION)\" # use -fsanitize=address for heap debugging
 LDFLAGS=
 .PHONY: all
 
