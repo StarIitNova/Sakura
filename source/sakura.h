@@ -83,12 +83,15 @@ struct SakuraState {
     SakuraFlag error;
     struct s_str errorMessage;
     SakuraFlag currentState;
+    size_t internalOffset;
 };
 
 typedef struct SakuraState SakuraState;
 
 SakuraState *sakura_createState();
 void sakura_destroyState(SakuraState *state);
+
+void sakuraDEBUG_dumpStack(SakuraState *S);
 
 void sakuraX_initializeTVMap(struct TVMap *map, size_t initCapacity);
 void sakuraX_resizeTVMap(struct TVMap *map, size_t newCapacity);
@@ -105,6 +108,8 @@ void sakuraX_destroyTVMap(struct TVMap *map);
 void sakuraY_mergePools(SakuraState *S, SakuraConstantPool *pool);
 void sakuraY_mergePoolsA(SakuraConstantPool *into, SakuraConstantPool *from);
 
+void sakuraY_attemptFreeTValue(TValue *val);
+
 TValue sakuraY_makeTNumber(double value);
 TValue sakuraY_makeTString(struct s_str *value);
 TValue sakuraY_makeTCFunc(int (*fnPtr)(SakuraState *));
@@ -114,6 +119,7 @@ void sakura_setGlobal(SakuraState *S, const struct s_str *name);
 
 void sakuraY_push(SakuraState *S, TValue val);
 TValue sakuraY_pop(SakuraState *S);
+TValue sakuraY_popN(SakuraState *S, int n);
 TValue *sakuraY_peek(SakuraState *S);
 int sakura_peek(SakuraState *S);
 

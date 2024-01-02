@@ -5,10 +5,9 @@
 #include "assembler.h"
 
 unsigned int hash(const char *key, size_t len, size_t capacity) {
-    unsigned int hashValue = 0;
-    size_t p = 0;
-    while (p < len)
-        hashValue = (hashValue << 5) + key[p++];
+    unsigned int hashValue = 5381;
+    for (size_t i = 0; i < len; i++)
+        hashValue = (hashValue << 5) + hashValue + key[i];
     return hashValue % capacity;
 }
 
@@ -51,6 +50,8 @@ SakuraState *sakura_createState() {
             state->registry.args[i].tt = SAKURA_TNUMFLT;
             state->registry.args[i].value.n = 0;
         }
+
+        state->internalOffset = 0;
     }
 
     return state;
@@ -78,6 +79,24 @@ void sakura_destroyState(SakuraState *state) {
     }
 }
 
+void sakuraDEBUG_dumpStack(SakuraState *S) {
+    printf("Stack dump (%p-%d):\n", S, S->stackIndex);
+    for (int i = 0; i < S->stackIndex; i++) {
+        printf("  [%d] ", i);
+        if (S->stack[i].tt == SAKURA_TNUMFLT) {
+            printf("%f\n", S->stack[i].value.n);
+        } else if (S->stack[i].tt == SAKURA_TSTR) {
+            printf("%.*s\n", S->stack[i].value.s.len, S->stack[i].value.s.str);
+        } else if (S->stack[i].tt == SAKURA_TCFUNC) {
+            printf("[CFunc %p]\n", S->stack[i].value.cfn);
+        } else if (S->stack[i].tt == SAKURA_TFUNC) {
+            printf("[SakuraFunc '<NIL>']\n");
+        } else {
+            printf("[Unknown]\n");
+        }
+    }
+}
+
 void sakuraX_initializeTVMap(struct TVMap *map, size_t initCapacity) {
     map->pairs = malloc(initCapacity * sizeof(struct TVMapPair));
     map->size = 0;
@@ -91,12 +110,31 @@ void sakuraX_initializeTVMap(struct TVMap *map, size_t initCapacity) {
 }
 
 void sakuraX_resizeTVMap(struct TVMap *map, size_t newCapacity) {
-    map->pairs = realloc(map->pairs, newCapacity * sizeof(struct TVMapPair));
+    struct TVMapPair *oldPairs = map->pairs;
+    size_t oldCapacity = map->capacity;
+
+    map->pairs = malloc(newCapacity * sizeof(struct TVMapPair));
+    map->size = 0;
     map->capacity = newCapacity;
+
+    for (size_t i = 0; i < newCapacity; i++) {
+        map->pairs[i].init = 0;
+        map->pairs[i].key.str = NULL;
+        map->pairs[i].key.len = 0;
+    }
+
+    for (size_t i = 0; i < oldCapacity; i++) {
+        if (oldPairs[i].init == 1) {
+            sakuraX_TVMapInsert(map, &oldPairs[i].key, oldPairs[i].value);
+            s_str_free(&oldPairs[i].key); // Free the old key (assuming ownership transfer)
+        }
+    }
+
+    free(oldPairs);
 }
 
 void sakuraX_TVMapInsert(struct TVMap *map, const struct s_str *key, TValue value) {
-    if ((double)map->size / map->capacity >= 0.75) {
+    if ((double)map->size / map->capacity >= 0.5) {
         sakuraX_resizeTVMap(map, map->capacity * 2);
     }
 
@@ -135,6 +173,12 @@ void sakuraX_destroyTVMap(struct TVMap *map) {
     map->pairs = NULL;
     map->size = 0;
     map->capacity = 0;
+}
+
+void sakuraY_attemptFreeTValue(TValue *val) {
+    if (val->tt == SAKURA_TFUNC) {
+        sakuraX_freeAssembly(val->value.assembly);
+    }
 }
 
 TValue sakuraY_makeTNumber(double value) {
@@ -188,6 +232,22 @@ TValue sakuraY_pop(SakuraState *S) {
         exit(1);
     }
     return S->stack[--S->stackIndex];
+}
+
+// make a function to pop a specific index and shift everything down
+TValue sakuraY_popN(SakuraState *S, int n) {
+    if (S->stackIndex <= n) {
+        printf("Error: stack underflow\n");
+        exit(1);
+    }
+
+    TValue val = S->stack[n];
+
+    for (int i = n; i < S->stackIndex - 1; i++)
+        S->stack[i] = S->stack[i + 1];
+    S->stackIndex--; // this will allow the top element to be overwritten (it is duplicated above)
+
+    return val;
 }
 
 TValue *sakuraY_peek(SakuraState *S) {
