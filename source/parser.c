@@ -177,7 +177,7 @@ struct TokenStack *sakuraY_analyze(SakuraState *S, struct s_str *source) {
         } else if (source->str[i] == '"' || source->str[i] == '\'') {
             struct Token *tok = malloc(sizeof(struct Token));
             tok->type = SAKURA_TOKEN_STRING;
-            tok->start = source->str + i;
+            tok->start = source->str + i + 1;
             char quoteChar = source->str[i++];
 
             while (i < source->len && source->str[i] != quoteChar) {
@@ -428,6 +428,13 @@ struct Node *sakuraX_parseFactor(SakuraState *S, struct TokenStack *tokens) {
         free(tokStr);
 
         return node;
+    } else if (token->type == SAKURA_TOKEN_STRING) {
+        struct Node *node = sakuraX_makeNode(SAKURA_TOKEN_STRING);
+        node->token = token;
+        return node;
+    } else if (token->type == SAKURA_TOKEN_BANG) {
+        struct Node *op = sakuraX_parseFactor(S, tokens);
+        return sakuraX_parseUnary(S, token, op);
     } else if (token->type == SAKURA_TOKEN_PLUS || token->type == SAKURA_TOKEN_MINUS) {
         struct Node *op = sakuraX_parseFactor(S, tokens);
         return sakuraX_parseUnary(S, token, op);
