@@ -23,7 +23,7 @@ LONG WINAPI CriticalExceptionHandler(EXCEPTION_POINTERS *ExceptionInfo) {
         exit(1);
     }
 
-    printf("Windows exception: %08X\n", ExceptionInfo->ExceptionRecord->ExceptionCode);
+    printf("Windows exception: %08lX\n", ExceptionInfo->ExceptionRecord->ExceptionCode);
 
     return EXCEPTION_CONTINUE_SEARCH;
 }
