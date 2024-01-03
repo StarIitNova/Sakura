@@ -38,3 +38,7 @@ struct Node *sakuraX_parseLogical(SakuraState *S, struct TokenStack *tokens);
 struct Node *sakuraX_parseVar(SakuraState *S, struct TokenStack *tokens);
 struct Node *sakuraX_parseExpressionEntry(SakuraState *S, struct TokenStack *tokens);
 struct Node *sakuraX_parseBlocks(SakuraState *S, struct TokenStack *tokens);
+struct Node *sakuraX_parseExecution(SakuraState *S, struct TokenStack *tokens);
+
+struct Node *sakuraX_parseCall(SakuraState *S, struct Node *prev, struct TokenStack *tokens);
+struct Node *sakuraX_parseIndex(SakuraState *S, struct Node *prev, struct TokenStack *tokens);
