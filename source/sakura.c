@@ -81,7 +81,12 @@ void sakura_destroyState(SakuraState *state) {
 }
 
 void sakuraDEBUG_dumpStack(SakuraState *S) {
-    printf("Stack dump (%p-%d):\n", S, S->stackIndex);
+    if (S->stackIndex == 0) {
+        printf("[Stack Dump]: No stack values to dump\n");
+        return;
+    }
+
+    printf("[Stack Dump]: dump (%p-%d):\n", S, S->stackIndex);
     for (int i = 0; i < S->stackIndex; i++) {
         printf("  [%d] ", i);
         if (S->stack[i].tt == SAKURA_TNUMFLT) {
@@ -96,14 +101,34 @@ void sakuraDEBUG_dumpStack(SakuraState *S) {
             printf("[Unknown]\n");
         }
     }
+
+    printf("[Stack Dump]: end dump\n");
 }
 
 void sakuraDEBUG_dumpTokens(struct TokenStack *tokens) {
-    printf("Tokens:\n");
+    printf("[Token Dump]: dump:\n");
     for (size_t i = 0; i < tokens->size; i++) {
         struct Token *token = tokens->tokens[i];
         printf("    [%d]:\t'%.*s'\n", token->type, (int)token->length, token->start);
     }
+    printf("[Token Dump]: end dump\n");
+}
+
+void sakuraDEBUG_dumpConstantPool(SakuraConstantPool *pool) {
+    char *allocVal;
+    if (pool->size == 0) {
+        printf("[Constant Dump]: No constants to dump\n");
+        return;
+    }
+
+    printf("[Constant Dump]: dump (%p through %p):\n", pool->constants, pool->constants + pool->size);
+    for (size_t i = 0; i < pool->size; i++) {
+        allocVal = sakuraX_readTVal(&pool->constants[i]);
+        printf("  [%lld] %s\n", i, allocVal);
+        free(allocVal);
+    }
+
+    printf("[Constant Dump]: end dump\n");
 }
 
 void sakuraX_initializeTVMap(struct TVMap *map, size_t initCapacity) {
@@ -395,4 +420,30 @@ int sakuraX_compareTValues(const TValue *a, const TValue *b) {
     }
 
     return 0;
+}
+
+char *sakuraX_readTVal(TValue *val) {
+    char *allocVal = (char *)malloc(1024 * sizeof(char));
+
+    LOG_CALL();
+
+    if (val == NULL) {
+        sprintf(allocVal, "[UNKNOWN]");
+        return allocVal;
+    }
+
+    switch (val->tt) {
+    case SAKURA_TNUMFLT:
+        sprintf(allocVal, "%f", val->value.n);
+        break;
+    case SAKURA_TSTR:
+        sprintf(allocVal, "'%.*s'", val->value.s.len, val->value.s.str);
+        break;
+    default:
+        sprintf(allocVal, "[Unknown T%d D%f @ %p (%p)]", val->tt, val->value.n, val, &val->tt);
+        break;
+    }
+
+    LOG_POP();
+    return allocVal;
 }

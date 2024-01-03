@@ -27,6 +27,8 @@ int sakuraX_interpretA(SakuraState *S, struct SakuraAssembly *assembly, int offs
     int *instructions;
     int preStackIdx;
 
+    LOG_CALL();
+
     S->currentState = SAKURA_FLAG_RUNTIME;
 
     sakuraY_mergePools(S, &assembly->pool);
@@ -230,6 +232,7 @@ int sakuraX_interpretA(SakuraState *S, struct SakuraAssembly *assembly, int offs
         sakuraY_pop(S); // pop argc off of the stack
     }
 
+    LOG_POP();
     return 0;
 }
 

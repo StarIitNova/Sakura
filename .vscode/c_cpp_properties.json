@@ -1,0 +1,16 @@
+{
+    "env": {
+        "myDefaultDefines": [
+            "SAKURA_DEBUG"
+        ]
+    },
+    "configurations": [
+        {
+            "name": "*",
+            "defines": [
+                "${myDefaultDefines}"
+            ]
+        }
+    ],
+    "version": 4
+}

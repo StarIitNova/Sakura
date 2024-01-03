@@ -18,20 +18,28 @@ void sakuraL_loadStdlib(SakuraState *S) {
 
 void sakuraL_loadfile(SakuraState *S, const char *file, int showDisasm) {
     struct s_str source = readfile(file);
+
+    LOG_CALL();
+
     if (source.str == NULL) {
         printf("Error: could not read file %s\n", file);
+        LOG_POP();
         return;
     }
 
     sakuraL_loadstring(S, &source, showDisasm);
 
     s_str_free(&source);
+
+    LOG_POP();
 }
 
 void sakuraL_loadstring(SakuraState *S, struct s_str *source, int showDisasm) {
     struct TokenStack *tokens;
     struct NodeStack *nodes;
     struct SakuraAssembly *assembly;
+
+    LOG_CALL();
 
     sakuraL_loadStdlib(S);
 
@@ -46,18 +54,30 @@ void sakuraL_loadstring(SakuraState *S, struct s_str *source, int showDisasm) {
     sakuraX_interpret(S, assembly);
 
     sakuraX_freeAssembly(assembly);
+
+    LOG_POP();
 }
 
 void sakuraL_loadstring_c(SakuraState *S, const char *str, int showDisasm) {
     struct s_str source = s_str(str);
+
+    LOG_CALL();
+
     sakuraL_loadstring(S, &source, showDisasm);
     s_str_free(&source);
+
+    LOG_POP();
 }
 
 void sakuraL_registerGlobalFn(SakuraState *S, const char *name, int (*fnPtr)(SakuraState *)) {
     struct s_str nameStr = s_str(name);
     TValue val = sakuraY_makeTCFunc(fnPtr);
+
+    LOG_CALL();
+
     sakuraY_push(S, val);
     sakura_setGlobal(S, &nameStr);
     s_str_free(&nameStr);
+
+    LOG_POP();
 }

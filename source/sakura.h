@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 
+#include "logger.h"
 #include "sstr.h"
 #include "sstructures.h"
 
@@ -10,6 +11,7 @@ void sakura_destroyState(SakuraState *state);
 
 void sakuraDEBUG_dumpStack(SakuraState *S);
 void sakuraDEBUG_dumpTokens(struct TokenStack *tokens);
+void sakuraDEBUG_dumpConstantPool(SakuraConstantPool *pool);
 
 unsigned int sakuraX_hashForTVMap(const char *key, size_t len, size_t capacity);
 void sakuraX_initializeTVMap(struct TVMap *map, size_t initCapacity);
@@ -55,3 +57,5 @@ struct s_str sakura_popString(SakuraState *S);
 
 unsigned int sakuraX_hashTValue(const TValue *key, size_t capacity);
 int sakuraX_compareTValues(const TValue *a, const TValue *b);
+
+char *sakuraX_readTVal(TValue *val);
