@@ -10,8 +10,8 @@ CWARNSC=-Wdeclaration-after-statement -Wmissing-prototypes -Wnested-externs -Wst
 CWARNS=$(CWARNSCPP) $(CWARNSGCC) $(CWARNSC)
 
 # use -fsanitize=address for heap debugging
-DEBUGCFLAGS=-g -Og
-RELEASECFLAGS=-O3
+DEBUGCFLAGS=-g -Og -DSAKURA_DEBUG
+RELEASECFLAGS=-O3 -DSAKURA_RELEASE
 
 MYCFLAGS=$(CWARNS) $(DEBUGCFLAGS) -std=c99 -DSAKURA_VERSION=\"$(APP_VERSION)\"
 
