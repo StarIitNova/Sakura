@@ -1,1 +1,1 @@
-let x = {1, 2, [3] = 3}
+loadstring("print(123)")()
