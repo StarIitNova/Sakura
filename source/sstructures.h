@@ -5,6 +5,7 @@
 #define SAKURA_FLAG_LEXER 0
 #define SAKURA_FLAG_PARSER 1
 #define SAKURA_FLAG_ASSEMBLING 2
+#define SAKURA_FLAG_DISASSEMBLING 5
 #define SAKURA_FLAG_RUNTIME 3
 #define SAKURA_FLAG_ENDED 4
 
@@ -83,6 +84,7 @@ enum TokenType {
     SAKURA_NODE_WHILE,
     SAKURA_NODE_VAR,
     SAKURA_NODE_TABLE,
+    SAKURA_NODE_INDEX,
 
     // Misc
     SAKURA_TOKEN_SENTINEL // for telling the binary operation parser to stop

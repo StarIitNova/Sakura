@@ -2,34 +2,15 @@
 
 #include <stdlib.h>
 
-char *sakuraX_readTVal(TValue *val) {
-    char *allocVal = (char *)malloc(1024 * sizeof(char));
-
-    if (val == NULL) {
-        sprintf(allocVal, "[UNKNOWN]");
-        return allocVal;
-    }
-
-    switch (val->tt) {
-    case SAKURA_TNUMFLT:
-        sprintf(allocVal, "%f", val->value.n);
-        break;
-    case SAKURA_TSTR:
-        sprintf(allocVal, "'%.*s'", val->value.s.len, val->value.s.str);
-        break;
-    default:
-        sprintf(allocVal, "[Unknown T%d D%f @ %p (%p)]", val->tt, val->value.n, val, &val->tt);
-        break;
-    }
-
-    return allocVal;
-}
-
 void sakuraX_writeDisasm(SakuraState *S, struct SakuraAssembly *assembler, const char *filename, int mode) {
     struct s_str **cachedGlobals;
     struct s_str basicCall;
     size_t idx = 1;
     char *allocVal, *allocVal2, *trueFname;
+
+    LOG_CALL();
+
+    S->currentState = SAKURA_FLAG_DISASSEMBLING;
 
     printf("%s <%s> (%lld instructions, %lld bytes)\n", mode & 1 << 8 ? "function" : "main", filename, assembler->size,
            assembler->size * sizeof(int));
@@ -111,7 +92,9 @@ void sakuraX_writeDisasm(SakuraState *S, struct SakuraAssembly *assembler, const
             break;
         }
         case SAKURA_CALL: {
-            struct s_str *key = cachedGlobals[assembler->instructions[i + 1]];
+            struct s_str *key = NULL;
+            if (cachedGlobals + assembler->instructions[i + 1] >= cachedGlobals)
+                key = cachedGlobals[assembler->instructions[i + 1]];
             if (key == NULL)
                 key = &basicCall;
             printf("    %lld\t(%lld)\t\tCALL\t\t%d, %d\t\t;; %.*s(%d args...)\n", idx, i,
@@ -234,4 +217,6 @@ void sakuraX_writeDisasm(SakuraState *S, struct SakuraAssembly *assembler, const
         printf("=================\n");
 
     s_str_free(&basicCall);
+
+    LOG_POP();
 }
