@@ -10,7 +10,8 @@ void sakuraLoggerInit(void) {
     GlobalLogger.callstackSize = 0;
 
     GlobalLogger.useColors = getenv("TERM") != NULL || getenv("ANSICON") != NULL || getenv("ConEmuANSI") != NULL ||
-                             getenv("WT_SESSION") != NULL || strcmp(getenv("TERM_PROGRAM"), "vscode") == 0 ||
+                             getenv("WT_SESSION") != NULL ||
+                             (getenv("TERM_PROGRAM") && strcmp(getenv("TERM_PROGRAM"), "vscode") == 0) ||
                              getenv("COLORTERM") != NULL;
 }
 
@@ -24,7 +25,7 @@ void sakuraLogger_insertCallStack(SakuraLogger *logger, const char *funcName, co
 
     allocVal = (char *)malloc(sizeof(char) * (strlen(funcName) + strlen(filename) + 32 + logger->useColors * 8 * 6));
     if (logger->useColors)
-        sprintf(allocVal, "\033[36m%s\033[0m at \033[35m%s\033[0m:\033[33m%d\033[0m", funcName, filename, line);
+        sprintf(allocVal, "\x1b[36m%s\x1b[0m at \x1b[35m%s\x1b[0m:\x1b[33m%d\x1b[0m", funcName, filename, line);
     else
         sprintf(allocVal, "%s at %s:%d", funcName, filename, line);
 
@@ -46,15 +47,51 @@ void sakuraLoggerClose(void) {
 
 void sakuraLogger_dumpCallStack(SakuraLogger *logger) {
     if (logger->useColors)
-        printf("\033[31m[Debugger]:\033[0m Full callstack dump\n");
+        printf("\x1b[31m[Debugger]:\x1b[0m Full callstack dump\n");
     else
         printf("[Debugger]: Full callstack dump\n");
     for (size_t i = 0; i < logger->callstackSize; i++) {
         if (logger->useColors) {
-            printf("    \033[1;32m[%lld]\033[0m  %s\n", i, logger->callstack[i]);
+            printf("    \x1b[1;32m[%lld]\x1b[0m  %s\n", i, logger->callstack[i]);
             continue;
         }
 
         printf("    [%lld]  %s\n", i, logger->callstack[i]);
     }
+}
+
+void sakura_printf(const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+
+    if (GlobalLogger.useColors) {
+        vprintf(fmt, args);
+    } else {
+        char *output = (char *)malloc(strlen(fmt) + 1);
+        char *outputPtr = output;
+
+        if (!output) {
+            printf("Error: failed to allocate memory for sakura_printf\n");
+            exit(1);
+        }
+
+        while (*fmt != '\0') {
+            if (*fmt == '\x1b') {
+                while (*fmt != 'm' && *fmt != '\0') {
+                    fmt++;
+                }
+            } else {
+                *outputPtr++ = *fmt;
+            }
+
+            fmt++;
+        }
+
+        *outputPtr = '\0';
+
+        vprintf(output, args);
+        free(output);
+    }
+
+    va_end(args);
 }

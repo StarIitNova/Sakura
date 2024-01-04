@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -18,6 +19,7 @@ void sakuraLogger_popCallStack(SakuraLogger *logger);
 void sakuraLoggerClose(void);
 
 void sakuraLogger_dumpCallStack(SakuraLogger *logger);
+void sakura_printf(const char *fmt, ...);
 
 #ifdef SAKURA_DEBUG
 #define LOG_CALL() sakuraLogger_insertCallStack(&GlobalLogger, __func__, __FILE__, __LINE__)
@@ -27,4 +29,4 @@ void sakuraLogger_dumpCallStack(SakuraLogger *logger);
 #define LOG_CALL()
 #define LOG_POP()
 #define LOG_DUMP()
-#endif
+#endif // SAKURA_DEBUG
