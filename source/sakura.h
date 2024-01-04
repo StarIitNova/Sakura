@@ -59,3 +59,4 @@ unsigned int sakuraX_hashTValue(const TValue *key, size_t capacity);
 int sakuraX_compareTValues(const TValue *a, const TValue *b);
 
 char *sakuraX_readTVal(TValue *val);
+char *sakuraX_readTValC(TValue *val);

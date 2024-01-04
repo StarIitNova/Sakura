@@ -447,3 +447,30 @@ char *sakuraX_readTVal(TValue *val) {
     LOG_POP();
     return allocVal;
 }
+
+char *sakuraX_readTValC(TValue *val) {
+    char *allocVal = (char *)malloc((1024 + 8 * 6) * sizeof(char));
+
+    LOG_CALL();
+
+    if (val == NULL) {
+        sprintf(allocVal, "\x1b[31m[UNKNOWN]\x1b[0m");
+        return allocVal;
+    }
+
+    switch (val->tt) {
+    case SAKURA_TNUMFLT:
+        sprintf(allocVal, "\x1b[33m%f\x1b[0m", val->value.n);
+        break;
+    case SAKURA_TSTR:
+        sprintf(allocVal, "\x1b[32m'%.*s'\x1b[0m", val->value.s.len, val->value.s.str);
+        break;
+    default:
+        sprintf(allocVal, "\x1b[31m[Unknown \x1b[33mT%d D%f\x1b[31m @ \x1b[33m%p (%p)\x1b[31m]\x1b[0m", val->tt,
+                val->value.n, val, &val->tt);
+        break;
+    }
+
+    LOG_POP();
+    return allocVal;
+}
