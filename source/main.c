@@ -22,7 +22,7 @@ LONG WINAPI CriticalExceptionHandler(EXCEPTION_POINTERS *ExceptionInfo);
 LONG WINAPI CriticalExceptionHandler(EXCEPTION_POINTERS *ExceptionInfo) {
     if (ExceptionInfo->ExceptionRecord->ExceptionCode == STATUS_HEAP_CORRUPTION) {
         if (GlobalLogger.useColors) {
-            printf("\033[34m[Core \033[1;31mFATAL\033[0;34m]:\033[0m Critical error \033[33mC0000374\033[0m "
+            printf("\x1b[34m[Core \x1b[1;31mFATAL\x1b[0;34m]:\x1b[0m Critical error \x1b[33mC0000374\x1b[0m "
                    "detected "
                    "(heap corruption)\n");
         } else {
@@ -37,9 +37,9 @@ LONG WINAPI CriticalExceptionHandler(EXCEPTION_POINTERS *ExceptionInfo) {
     }
 
     if (GlobalLogger.useColors) {
-        printf("\033[34m[Core \033[1;31mFATAL\033[0;34m]:\033[0m Windows exception: \033[33m%08lX\033[0m\n",
+        printf("\x1b[34m[Core \x1b[1;31mFATAL\x1b[0;34m]:\x1b[0m Windows exception: \x1b[33m%08lX\x1b[0m\n",
                ExceptionInfo->ExceptionRecord->ExceptionCode);
-        printf("    \033[34m[Core INFO]:\033[0m Generating debug info\n\n");
+        printf("    \x1b[34m[Core INFO]:\x1b[0m Generating debug info\n\n");
     } else {
         printf("[Core FATAL]: Windows exception: %08lX", ExceptionInfo->ExceptionRecord->ExceptionCode);
         printf("    [Core INFO]: Generating debug info\n\n");
@@ -56,7 +56,7 @@ LONG WINAPI CriticalExceptionHandler(EXCEPTION_POINTERS *ExceptionInfo) {
 void onSignal(int signum) {
     if (signum == SIGSEGV) {
         if (GlobalLogger.useColors) {
-            printf("\033[1;31mSegmentation fault\033[0m (core dumped)\n");
+            printf("\x1b[1;31mSegmentation fault\x1b[0m (core dumped)\n");
         } else {
             printf("Segmentation fault (core dumped)\n");
         }
@@ -127,70 +127,70 @@ int main(int argc, const char **argv) {
 void dumpDebugStateInfo(SakuraState *S) {
     const char *debuggerName = "[Core Debugger]:";
     if (GlobalLogger.useColors) {
-        debuggerName = "\033[34m[Core Debugger]:\033[0m";
+        debuggerName = "\x1b[34m[Core Debugger]:\x1b[0m";
     }
 
-    printf("%s DEBUG STATE INFO\n", debuggerName);
-    printf(" %s Current state: ", debuggerName);
+    sakura_printf("%s DEBUG STATE INFO\n", debuggerName);
+    sakura_printf(" %s Current state: ", debuggerName);
     switch (S->currentState) {
     case SAKURA_FLAG_LEXER:
-        printf("lexer\n");
+        sakura_printf("\x1b[33mlexer\x1b[0m\n");
         break;
     case SAKURA_FLAG_PARSER:
-        printf("parser\n");
+        sakura_printf("\x1b[33mparser\x1b[0m\n");
         break;
     case SAKURA_FLAG_ASSEMBLING:
-        printf("assembling\n");
+        sakura_printf("\x1b[33massembling\x1b[0m\n");
         break;
     case SAKURA_FLAG_RUNTIME:
-        printf("runtime\n");
+        sakura_printf("\x1b[33mruntime\x1b[0m\n");
         break;
     case SAKURA_FLAG_ENDED:
-        printf("ended\n");
+        sakura_printf("\x1b[33mended\x1b[0m\n");
         break;
     case SAKURA_FLAG_DISASSEMBLING:
-        printf("disassembling\n");
+        sakura_printf("\x1b[33mdisassembling\x1b[0m\n");
         break;
     default:
-        printf("unknown\n");
+        sakura_printf("\x1b[33munknown\x1b[0m\n");
         break;
     }
-    printf(" %s Current internal offset: %lld\n", debuggerName, S->internalOffset);
-    printf(" %s Stack capacity: %d\n", debuggerName, SAKURA_STACK_SIZE);
-    printf(" %s Stack index: %d\n", debuggerName, S->stackIndex);
-    printf("  ");
+    sakura_printf(" %s Current internal offset: \x1b[33m%lld\x1b[0m\n", debuggerName, S->internalOffset);
+    sakura_printf(" %s Stack capacity: \x1b[33m%d\x1b[0m\n", debuggerName, SAKURA_STACK_SIZE);
+    sakura_printf(" %s Stack index: \x1b[33m%d\x1b[0m\n", debuggerName, S->stackIndex);
+    sakura_printf("  ");
     sakuraDEBUG_dumpStack(S);
-    printf(" %s Global table: %p\n", debuggerName, S->globals.pairs);
-    printf(" %s Global table size: %lld\n", debuggerName, S->globals.capacity);
-    printf(" %s Global table index: %lld\n", debuggerName, S->globals.size);
-    printf(" %s Constant pool: %p\n", debuggerName, S->pool.constants);
-    printf(" %s Constant pool size: %lld\n", debuggerName, S->pool.capacity);
-    printf(" %s Constant pool index: %lld\n", debuggerName, S->pool.size);
-    printf("  ");
+    sakura_printf(" %s Global table: \x1b[33m%p\x1b[0m\n", debuggerName, S->globals.pairs);
+    sakura_printf(" %s Global table size: \x1b[33m%lld\x1b[0m\n", debuggerName, S->globals.capacity);
+    sakura_printf(" %s Global table index: \x1b[33m%lld\x1b[0m\n", debuggerName, S->globals.size);
+    sakura_printf(" %s Constant pool: \x1b[33m%p\x1b[0m\n", debuggerName, S->pool.constants);
+    sakura_printf(" %s Constant pool size: \x1b[33m%lld\x1b[0m\n", debuggerName, S->pool.capacity);
+    sakura_printf(" %s Constant pool index: \x1b[33m%lld\x1b[0m\n", debuggerName, S->pool.size);
+    sakura_printf("  ");
     sakuraDEBUG_dumpConstantPool(&S->pool);
-    printf(" %s Local table: %p\n", debuggerName, S->locals);
-    printf(" %s Local table size: %lld\n", debuggerName, S->localsSize);
-    printf(" %s Last error flag (%d): ", debuggerName, S->error);
+    sakura_printf(" %s Local table: \x1b[33m%p\x1b[0m\n", debuggerName, S->locals);
+    sakura_printf(" %s Local table size: \x1b[33m%lld\x1b[0m\n", debuggerName, S->localsSize);
+    sakura_printf(" %s Last error flag (%d): ", debuggerName, S->error);
     switch (S->error) {
     case SAKURA_EFLAG_NONE:
-        printf("none\n");
+        sakura_printf("\x1b[33mnone\x1b[0m\n");
         break;
     case SAKURA_EFLAG_SYNTAX:
-        printf("syntax\n");
+        sakura_printf("\x1b[33msyntax\x1b[0m\n");
         break;
     case SAKURA_EFLAG_RUNTIME:
-        printf("runtime\n");
+        sakura_printf("\x1b[33mruntime\x1b[0m\n");
         break;
     case SAKURA_EFLAG_FATAL:
-        printf("fatal/internal\n");
+        sakura_printf("\x1b[33mfatal/internal\x1b[0m\n");
         break;
     default:
-        printf("unknown\n");
+        sakura_printf("\x1b[33munknown\x1b[0m\n");
         break;
     }
 
-    printf(" %s Last error message: %.*s\n", debuggerName, S->errorMessage.len, S->errorMessage.str);
-    printf(" %s End debug info\n", debuggerName);
+    sakura_printf(" %s Last error message: %.*s\n", debuggerName, S->errorMessage.len, S->errorMessage.str);
+    sakura_printf(" %s End debug info\n", debuggerName);
 
     LOG_DUMP();
 }

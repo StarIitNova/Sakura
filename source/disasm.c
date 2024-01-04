@@ -12,10 +12,11 @@ void sakuraX_writeDisasm(SakuraState *S, struct SakuraAssembly *assembler, const
 
     S->currentState = SAKURA_FLAG_DISASSEMBLING;
 
-    printf("%s <%s> (%lld instructions, %lld bytes)\n", mode & 1 << 8 ? "function" : "main", filename, assembler->size,
-           assembler->size * sizeof(int));
-    printf("%lld registers, %lld closures, %lld constants, %lld functions\n", assembler->highestRegister,
-           assembler->closureIdx, assembler->pool.size, assembler->functionsLoaded);
+    sakura_printf("\x1b[36m%s \x1b[35m<%s>\x1b[0m (\x1b[33m%lld\x1b[0m instructions, \x1b[33m%lld\x1b[0m bytes)\n",
+                  mode & 1 << 8 ? "function" : "main", filename, assembler->size, assembler->size * sizeof(int));
+    sakura_printf("\x1b[33m%lld\x1b[0m registers, \x1b[33m%lld\x1b[0m closures, \x1b[33m%lld\x1b[0m constants, "
+                  "\x1b[33m%lld\x1b[0m functions\n",
+                  assembler->highestRegister, assembler->closureIdx, assembler->pool.size, assembler->functionsLoaded);
 
     basicCall = s_str("loaded_function");
     cachedGlobals = (struct s_str **)malloc(sizeof(struct s_str *) * (assembler->functionsLoaded * 2));
@@ -23,71 +24,83 @@ void sakuraX_writeDisasm(SakuraState *S, struct SakuraAssembly *assembler, const
     for (size_t i = 0; i < assembler->size; i++) {
         switch (assembler->instructions[i]) {
         case SAKURA_LOADK: {
-            allocVal = sakuraX_readTVal(&assembler->pool.constants[-assembler->instructions[i + 2] - 1]);
-            printf("    %lld\t(%lld)\t\tLOADK\t\t%d\t\t;; %s into stack pos %d\n", idx, i,
-                   assembler->instructions[i + 2], allocVal, assembler->instructions[i + 1]);
+            allocVal = sakuraX_readTValC(&assembler->pool.constants[-assembler->instructions[i + 2] - 1]);
+            sakura_printf("    \x1b[1;32m%lld\x1b[0m\t(%lld)\t\tLOADK\t\t%d\t\t\x1b[30m;;\x1b[0m %s into stack pos "
+                          "\x1b[33m%d\x1b[0m\n",
+                          idx, i, assembler->instructions[i + 2], allocVal, assembler->instructions[i + 1]);
             free(allocVal);
             i += 2;
             break;
         }
         case SAKURA_ADD: {
-            printf("    %lld\t(%lld)\t\tADD\t\t%d, %d, %d\n", idx, i, assembler->instructions[i + 1],
-                   assembler->instructions[i + 2], assembler->instructions[i + 3]);
+            sakura_printf("    \x1b[1;32m%lld\x1b[0m\t(%lld)\t\tADD\t\t%d, %d, %d\n", idx, i,
+                          assembler->instructions[i + 1], assembler->instructions[i + 2],
+                          assembler->instructions[i + 3]);
             i += 3;
             break;
         }
         case SAKURA_SUB: {
-            printf("    %lld\t(%lld)\t\tSUB\t\t%d, %d, %d\n", idx, i, assembler->instructions[i + 1],
-                   assembler->instructions[i + 2], assembler->instructions[i + 3]);
+            sakura_printf("    \x1b[1;32m%lld\x1b[0m\t(%lld)\t\tSUB\t\t%d, %d, %d\n", idx, i,
+                          assembler->instructions[i + 1], assembler->instructions[i + 2],
+                          assembler->instructions[i + 3]);
             i += 3;
             break;
         }
         case SAKURA_MUL: {
-            printf("    %lld\t(%lld)\t\tMUL\t\t%d, %d, %d\n", idx, i, assembler->instructions[i + 1],
-                   assembler->instructions[i + 2], assembler->instructions[i + 3]);
+            sakura_printf("    \x1b[1;32m%lld\x1b[0m\t(%lld)\t\tMUL\t\t%d, %d, %d\n", idx, i,
+                          assembler->instructions[i + 1], assembler->instructions[i + 2],
+                          assembler->instructions[i + 3]);
             i += 3;
             break;
         }
         case SAKURA_DIV: {
-            printf("    %lld\t(%lld)\t\tDIV\t\t%d, %d, %d\n", idx, i, assembler->instructions[i + 1],
-                   assembler->instructions[i + 2], assembler->instructions[i + 3]);
+            sakura_printf("    \x1b[1;32m%lld\x1b[0m\t(%lld)\t\tDIV\t\t%d, %d, %d\n", idx, i,
+                          assembler->instructions[i + 1], assembler->instructions[i + 2],
+                          assembler->instructions[i + 3]);
             i += 3;
             break;
         }
         case SAKURA_POW: {
-            printf("    %lld\t(%lld)\t\tPOW\t\t%d, %d, %d\n", idx, i, assembler->instructions[i + 1],
-                   assembler->instructions[i + 2], assembler->instructions[i + 3]);
+            sakura_printf("    \x1b[1;32m%lld\x1b[0m\t(%lld)\t\tPOW\t\t%d, %d, %d\n", idx, i,
+                          assembler->instructions[i + 1], assembler->instructions[i + 2],
+                          assembler->instructions[i + 3]);
             i += 3;
             break;
         }
         case SAKURA_MOD: {
-            printf("    %lld\t(%lld)\t\tMOD\t\t%d, %d, %d\n", idx, i, assembler->instructions[i + 1],
-                   assembler->instructions[i + 2], assembler->instructions[i + 3]);
+            sakura_printf("    \x1b[1;32m%lld\x1b[0m\t(%lld)\t\tMOD\t\t%d, %d, %d\n", idx, i,
+                          assembler->instructions[i + 1], assembler->instructions[i + 2],
+                          assembler->instructions[i + 3]);
             i += 3;
             break;
         }
         case SAKURA_EQ: {
-            printf("    %lld\t(%lld)\t\tEQ\t\t%d, %d, %d\n", idx, i, assembler->instructions[i + 1],
-                   assembler->instructions[i + 2], assembler->instructions[i + 3]);
+            sakura_printf("    \x1b[1;32m%lld\x1b[0m\t(%lld)\t\tEQ\t\t%d, %d, %d\n", idx, i,
+                          assembler->instructions[i + 1], assembler->instructions[i + 2],
+                          assembler->instructions[i + 3]);
             i += 3;
             break;
         }
         case SAKURA_LT: {
-            printf("    %lld\t(%lld)\t\tLT\t\t%d, %d, %d\n", idx, i, assembler->instructions[i + 1],
-                   assembler->instructions[i + 2], assembler->instructions[i + 3]);
+            sakura_printf("    \x1b[1;32m%lld\x1b[0m\t(%lld)\t\tLT\t\t%d, %d, %d\n", idx, i,
+                          assembler->instructions[i + 1], assembler->instructions[i + 2],
+                          assembler->instructions[i + 3]);
             i += 3;
             break;
         }
         case SAKURA_LE: {
-            printf("    %lld\t(%lld)\t\tLE\t\t%d, %d, %d\n", idx, i, assembler->instructions[i + 1],
-                   assembler->instructions[i + 2], assembler->instructions[i + 3]);
+            sakura_printf("    \x1b[1;32m%lld\x1b[0m\t(%lld)\t\tLE\t\t%d, %d, %d\n", idx, i,
+                          assembler->instructions[i + 1], assembler->instructions[i + 2],
+                          assembler->instructions[i + 3]);
             i += 3;
             break;
         }
         case SAKURA_CLOSURE: {
-            printf("    %lld\t(%lld)\t\tCLOSURE\t\t%d, %d\t\t;; store fn-%d into stack pos %d\n", idx, i,
-                   assembler->instructions[i + 1], assembler->instructions[i + 2], assembler->instructions[i + 2],
-                   assembler->instructions[i + 1]);
+            sakura_printf("    \x1b[1;32m%lld\x1b[0m\t(%lld)\t\tCLOSURE\t\t%d, %d\t\t\x1b[30m;;\x1b[0m store fn-%d "
+                          "into stack pos "
+                          "\x1b[33m%d\x1b[0m\n",
+                          idx, i, assembler->instructions[i + 1], assembler->instructions[i + 2],
+                          assembler->instructions[i + 2], assembler->instructions[i + 1]);
             i += 2;
             break;
         }
@@ -97,9 +110,11 @@ void sakuraX_writeDisasm(SakuraState *S, struct SakuraAssembly *assembler, const
                 key = cachedGlobals[assembler->instructions[i + 1]];
             if (key == NULL)
                 key = &basicCall;
-            printf("    %lld\t(%lld)\t\tCALL\t\t%d, %d\t\t;; %.*s(%d args...)\n", idx, i,
-                   assembler->instructions[i + 1], assembler->instructions[i + 2], key->len, key->str,
-                   assembler->instructions[i + 2]);
+            sakura_printf(
+                "    \x1b[1;32m%lld\x1b[0m\t(%lld)\t\tCALL\t\t%d, %d\t\t\x1b[30m;;\x1b[0m \x1b[34m%.*s(\x1b[0m%d "
+                "args...\x1b[34m)\x1b[0m\n",
+                idx, i, assembler->instructions[i + 1], assembler->instructions[i + 2], key->len, key->str,
+                assembler->instructions[i + 2]);
             cachedGlobals[assembler->instructions[i + 1]] = NULL;
             i += 2;
             break;
@@ -107,76 +122,83 @@ void sakuraX_writeDisasm(SakuraState *S, struct SakuraAssembly *assembler, const
         case SAKURA_GETGLOBAL: {
             struct s_str *key = &S->globals.pairs[assembler->instructions[i + 2]].key;
             cachedGlobals[assembler->instructions[i + 1]] = key;
-            printf("    %lld\t(%lld)\t\tGETGLOBAL\t%d\t\t;; store '%.*s' into stack pos %d\n", idx, i,
-                   assembler->instructions[i + 2], key->len, key->str, assembler->instructions[i + 1]);
+            sakura_printf("    \x1b[1;32m%lld\x1b[0m\t(%lld)\t\tGETGLOBAL\t%d\t\t\x1b[30m;;\x1b[0m store "
+                          "\x1b[32m'%.*s'\x1b[0m into stack pos "
+                          "\x1b[33m%d\x1b[0m\n",
+                          idx, i, assembler->instructions[i + 2], key->len, key->str, assembler->instructions[i + 1]);
             i += 2;
             break;
         }
         case SAKURA_SETGLOBAL: {
-            allocVal = sakuraX_readTVal(&assembler->pool.constants[-assembler->instructions[i + 2] - 1]);
-            printf("    %lld\t(%lld)\t\tSETGLOBAL\t%d, %d\t\t;; sets '%s' from stack pos %d\n", idx, i,
-                   assembler->instructions[i + 1], assembler->instructions[i + 2], allocVal,
-                   assembler->instructions[i + 1]);
+            allocVal = sakuraX_readTValC(&assembler->pool.constants[-assembler->instructions[i + 2] - 1]);
+            sakura_printf(
+                "    \x1b[1;32m%lld\x1b[0m\t(%lld)\t\tSETGLOBAL\t%d, %d\t\t\x1b[30m;;\x1b[0m sets '%s' from stack pos "
+                "\x1b[33m%d\x1b[0m\n",
+                idx, i, assembler->instructions[i + 1], assembler->instructions[i + 2], allocVal,
+                assembler->instructions[i + 1]);
             free(allocVal);
             i += 2;
             break;
         }
         case SAKURA_JMP: {
-            printf("    %lld\t(%lld)\t\tJMP\t\t%d\n", idx, i, assembler->instructions[i + 1]);
+            sakura_printf("    \x1b[1;32m%lld\x1b[0m\t(%lld)\t\tJMP\t\t%d\n", idx, i, assembler->instructions[i + 1]);
             i += 1;
             break;
         }
         case SAKURA_JMPIF: {
-            printf("    %lld\t(%lld)\t\tJMPIF\t\t%d, %d\n", idx, i, assembler->instructions[i + 1],
-                   assembler->instructions[i + 2]);
+            sakura_printf("    \x1b[1;32m%lld\x1b[0m\t(%lld)\t\tJMPIF\t\t%d, %d\n", idx, i,
+                          assembler->instructions[i + 1], assembler->instructions[i + 2]);
             i += 2;
             break;
         }
         case SAKURA_RETURN: {
-            printf("    %lld\t(%lld)\t\tRETURN\t\t%d, %d\n", idx, i, assembler->instructions[i + 1],
-                   assembler->instructions[i + 2]);
+            sakura_printf("    \x1b[1;32m%lld\x1b[0m\t(%lld)\t\tRETURN\t\t%d, %d\n", idx, i,
+                          assembler->instructions[i + 1], assembler->instructions[i + 2]);
             i += 2;
             break;
         }
         case SAKURA_NOT: {
-            printf("    %lld\t(%lld)\t\tNOT\t\t%d, %d\n", idx, i, assembler->instructions[i + 1],
-                   assembler->instructions[i + 2]);
+            sakura_printf("    \x1b[1;32m%lld\x1b[0m\t(%lld)\t\tNOT\t\t%d, %d\n", idx, i,
+                          assembler->instructions[i + 1], assembler->instructions[i + 2]);
             i += 2;
             break;
         }
         case SAKURA_MOVE: {
-            printf("    %lld\t(%lld)\t\tMOVE\t\t%d, %d\n", idx, i, assembler->instructions[i + 1],
-                   assembler->instructions[i + 2]);
+            sakura_printf("    \x1b[1;32m%lld\x1b[0m\t(%lld)\t\tMOVE\t\t%d, %d\n", idx, i,
+                          assembler->instructions[i + 1], assembler->instructions[i + 2]);
             i += 2;
             break;
         }
         case SAKURA_NEWTABLE: {
-            printf("    %lld\t(%lld)\t\tNEWTABLE\t%d, %d, %d\n", idx, i, assembler->instructions[i + 1], 0,
-                   assembler->instructions[i + 2]);
+            sakura_printf("    \x1b[1;32m%lld\x1b[0m\t(%lld)\t\tNEWTABLE\t%d, %d, %d\n", idx, i,
+                          assembler->instructions[i + 1], 0, assembler->instructions[i + 2]);
             i += 2;
             break;
         }
         case SAKURA_SETTABLE: {
-            allocVal = sakuraX_readTVal(assembler->instructions[i + 2] < 0
-                                            ? &assembler->pool.constants[-assembler->instructions[i + 2] - 1]
-                                            : NULL);
-            allocVal2 = sakuraX_readTVal(assembler->instructions[i + 3] < 0
-                                             ? &assembler->pool.constants[-assembler->instructions[i + 3] - 1]
+            allocVal = sakuraX_readTValC(assembler->instructions[i + 2] < 0
+                                             ? &assembler->pool.constants[-assembler->instructions[i + 2] - 1]
                                              : NULL);
-            printf("    %lld\t(%lld)\t\tSETTABLE\t%d, %d, %d \t;; %s %s\n", idx, i, assembler->instructions[i + 1],
-                   assembler->instructions[i + 2], assembler->instructions[i + 3], allocVal, allocVal2);
+            allocVal2 = sakuraX_readTValC(assembler->instructions[i + 3] < 0
+                                              ? &assembler->pool.constants[-assembler->instructions[i + 3] - 1]
+                                              : NULL);
+            sakura_printf("    \x1b[1;32m%lld\x1b[0m\t(%lld)\t\tSETTABLE\t%d, %d, %d \t\x1b[30m;;\x1b[0m %s %s\n", idx,
+                          i, assembler->instructions[i + 1], assembler->instructions[i + 2],
+                          assembler->instructions[i + 3], allocVal, allocVal2);
             i += 3;
             free(allocVal);
             free(allocVal2);
             break;
         }
         case SAKURA_GETTABLE: {
-            allocVal = sakuraX_readTVal(assembler->instructions[i + 3] < 0
-                                            ? &assembler->pool.constants[-assembler->instructions[i + 3] - 1]
-                                            : NULL);
-            printf("    %lld\t(%lld)\t\tGETTABLE\t%d, %d, %d \t;; tbl@%d[%s] into %d\n", idx, i,
-                   assembler->instructions[i + 1], assembler->instructions[i + 2], assembler->instructions[i + 3],
-                   assembler->instructions[i + 2], allocVal, assembler->instructions[i + 1]);
+            allocVal = sakuraX_readTValC(assembler->instructions[i + 3] < 0
+                                             ? &assembler->pool.constants[-assembler->instructions[i + 3] - 1]
+                                             : NULL);
+            sakura_printf(
+                "    \x1b[1;32m%lld\x1b[0m\t(%lld)\t\tGETTABLE\t%d, %d, %d \t\x1b[30m;;\x1b[0m tbl@%d[%s] into "
+                "\x1b[33m%d\x1b[0m\n",
+                idx, i, assembler->instructions[i + 1], assembler->instructions[i + 2], assembler->instructions[i + 3],
+                assembler->instructions[i + 2], allocVal, assembler->instructions[i + 1]);
             i += 3;
             free(allocVal);
             break;
@@ -196,10 +218,10 @@ void sakuraX_writeDisasm(SakuraState *S, struct SakuraAssembly *assembler, const
     }
 
     if (mode & 1 << 2) {
-        printf("Constants Dump (%p through %p):\n", assembler->pool.constants,
-               assembler->pool.constants + assembler->pool.size);
+        sakura_printf("Constants Dump (\x1b[33m%p\x1b[0m through \x1b[33m%p\x1b[0m):\n", assembler->pool.constants,
+                      assembler->pool.constants + assembler->pool.size);
         for (size_t i = 0; i < assembler->pool.size; i++) {
-            allocVal = sakuraX_readTVal(&assembler->pool.constants[i]);
+            allocVal = sakuraX_readTValC(&assembler->pool.constants[i]);
             printf("  [%lld] %s\n", i, allocVal);
             free(allocVal);
         }
@@ -214,7 +236,7 @@ void sakuraX_writeDisasm(SakuraState *S, struct SakuraAssembly *assembler, const
     }
 
     if (!(mode & 1 << 8))
-        printf("=================\n");
+        sakura_printf("\x1b[30m=============================================================================\x1b[0m\n");
 
     s_str_free(&basicCall);
 
