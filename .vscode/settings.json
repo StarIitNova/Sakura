@@ -5,6 +5,7 @@
     "type_traits": "c",
     "sakura.h": "c",
     "typeinfo": "c",
-    "sstructures.h": "c"
-  }
+    "sstructures.h": "c",
+    "stdlib.h": "c"
+}
 }
