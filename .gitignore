@@ -3,3 +3,8 @@ sakura
 bin/
 out/
 int/
+
+# Sandbox files
+sandbox.lock
+.sandbox
+.sndconfig
