@@ -9,8 +9,6 @@ An open sourced programming language created as a learning tool to better unders
 - [ ] Turing complete
 - [ ] Convenient to use
 - [ ] Self hosted (written in itself)
-- [ ] Optimized
-- [ ] Fully compiled version of the assembly?
 
 ## Installation
 
