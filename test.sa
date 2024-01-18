@@ -1,1 +1,1 @@
-loadstring("print(123)")()
+loadstring("loadstring('print(123)')()")()
