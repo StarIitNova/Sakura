@@ -4,6 +4,8 @@
 
 SakuraLogger GlobalLogger;
 
+typedef long long unsigned int ull;
+
 void sakuraLoggerInit(void) {
     GlobalLogger.callstack = (char **)malloc(sizeof(char *) * 128);
     GlobalLogger.callstackCapacity = 128;
@@ -35,7 +37,7 @@ void sakuraLogger_insertCallStack(SakuraLogger *logger, const char *funcName, co
 void sakuraLogger_popCallStack(SakuraLogger *logger) { free((void *)logger->callstack[--logger->callstackSize]); }
 
 void sakuraLoggerClose(void) {
-    for (size_t i = 0; i < GlobalLogger.callstackSize; i++) {
+    for (ull i = 0; i < GlobalLogger.callstackSize; i++) {
         free((void *)GlobalLogger.callstack[i]);
     }
 
@@ -50,7 +52,7 @@ void sakuraLogger_dumpCallStack(SakuraLogger *logger) {
         printf("\x1b[31m[Debugger]:\x1b[0m Full callstack dump\n");
     else
         printf("[Debugger]: Full callstack dump\n");
-    for (size_t i = 0; i < logger->callstackSize; i++) {
+    for (ull i = 0; i < logger->callstackSize; i++) {
         if (logger->useColors) {
             printf("    \x1b[1;32m[%lld]\x1b[0m  %s\n", i, logger->callstack[i]);
             continue;

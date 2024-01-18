@@ -16,12 +16,12 @@ int sakuraS_print(SakuraState *S) {
     for (int i = 0; i < args; i++) {
         if (sakura_isNumber(S)) {
             char output[50];
-            size_t len;
+            ull len;
 
             sprintf(output, "%f", sakura_popNumber(S));
 
             len = strlen(output);
-            for (size_t z = len - 1; z != (size_t)-1; z--) {
+            for (ull z = len - 1; z != (ull)-1; z--) {
                 if (output[z] == '0')
                     output[z] = '\0';
                 else
@@ -117,7 +117,7 @@ int sakuraS_dofile(SakuraState *S) {
     struct NodeStack *nodes;
     struct SakuraAssembly *assembly;
 
-    size_t originalOffset;
+    ull originalOffset;
     int retVals;
 
     if (args != 1) {

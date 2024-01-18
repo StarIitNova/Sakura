@@ -22,7 +22,7 @@ struct SakuraTTable *sakuraX_initializeTTable(void) {
     return table;
 }
 
-void sakuraX_resizeTTable(struct SakuraTTable *table, size_t newCapacity) {
+void sakuraX_resizeTTable(struct SakuraTTable *table, ull newCapacity) {
     struct TTableHashEntry **newHashPart =
         (struct TTableHashEntry **)calloc(newCapacity, sizeof(struct TTableHashEntry));
     if (newHashPart == NULL) {
@@ -30,7 +30,7 @@ void sakuraX_resizeTTable(struct SakuraTTable *table, size_t newCapacity) {
         exit(1);
     }
 
-    for (size_t i = 0; i < table->capacity; i++) {
+    for (ull i = 0; i < table->capacity; i++) {
         struct TTableHashEntry *entry = table->hashPart[i];
         if (entry != NULL) {
             struct TTableHashEntry *next = entry->next;
@@ -49,7 +49,7 @@ void sakuraX_resizeTTable(struct SakuraTTable *table, size_t newCapacity) {
 }
 
 void sakuraX_setTTable(struct SakuraTTable *table, const TValue *key, const TValue *value) {
-    size_t hashIdx = sakuraX_hashTValue(key, table->capacity);
+    ull hashIdx = sakuraX_hashTValue(key, table->capacity);
     struct TTableHashEntry *entry, *newEntry;
 
     entry = table->hashPart[hashIdx];
@@ -75,14 +75,14 @@ void sakuraX_setTTable(struct SakuraTTable *table, const TValue *key, const TVal
     table->size++;
 
     if ((double)table->size / (double)table->capacity > 0.75) {
-        size_t newCapacity = table->capacity * 2;
+        ull newCapacity = table->capacity * 2;
         sakuraX_resizeTTable(table, newCapacity);
     }
 }
 
 TValue sakuraX_getTTable(struct SakuraTTable *table, const TValue *key) {
     TValue defaultValue = {SAKURA_TNIL, {.nil = 1}};
-    size_t hashIdx = sakuraX_hashTValue(key, table->capacity);
+    ull hashIdx = sakuraX_hashTValue(key, table->capacity);
     struct TTableHashEntry *entry;
 
     entry = table->hashPart[hashIdx];
@@ -97,7 +97,7 @@ TValue sakuraX_getTTable(struct SakuraTTable *table, const TValue *key) {
 }
 
 void sakuraX_freeTTable(struct SakuraTTable *table) {
-    for (size_t i = 0; i < table->capacity; ++i) {
+    for (ull i = 0; i < table->capacity; ++i) {
         struct TTableHashEntry *entry = table->hashPart[i], *next;
         while (entry != NULL) {
             next = entry->next;

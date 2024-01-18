@@ -5,7 +5,7 @@
 void sakuraX_writeDisasm(SakuraState *S, struct SakuraAssembly *assembler, const char *filename, int mode) {
     struct s_str **cachedGlobals;
     struct s_str basicCall;
-    size_t idx = 1;
+    ull idx = 1;
     char *allocVal, *allocVal2, *trueFname;
 
     LOG_CALL();
@@ -21,7 +21,7 @@ void sakuraX_writeDisasm(SakuraState *S, struct SakuraAssembly *assembler, const
     basicCall = s_str("loaded_function");
     cachedGlobals = (struct s_str **)malloc(sizeof(struct s_str *) * (assembler->functionsLoaded * 2));
 
-    for (size_t i = 0; i < assembler->size; i++) {
+    for (ull i = 0; i < assembler->size; i++) {
         switch (assembler->instructions[i]) {
         case SAKURA_LOADK: {
             allocVal = sakuraX_readTValC(&assembler->pool.constants[-assembler->instructions[i + 2] - 1]);
@@ -212,7 +212,7 @@ void sakuraX_writeDisasm(SakuraState *S, struct SakuraAssembly *assembler, const
 
     if (mode & 1 << 1) {
         printf("Raw Instructions:\n");
-        for (size_t i = 0; i < assembler->size; i++)
+        for (ull i = 0; i < assembler->size; i++)
             printf("%d ", assembler->instructions[i]);
         printf("\n");
     }
@@ -220,14 +220,14 @@ void sakuraX_writeDisasm(SakuraState *S, struct SakuraAssembly *assembler, const
     if (mode & 1 << 2) {
         sakura_printf("Constants Dump (\x1b[33m%p\x1b[0m through \x1b[33m%p\x1b[0m):\n", assembler->pool.constants,
                       assembler->pool.constants + assembler->pool.size);
-        for (size_t i = 0; i < assembler->pool.size; i++) {
+        for (ull i = 0; i < assembler->pool.size; i++) {
             allocVal = sakuraX_readTValC(&assembler->pool.constants[i]);
             printf("  [%lld] %s\n", i, allocVal);
             free(allocVal);
         }
     }
 
-    for (size_t i = 0; i < assembler->closureIdx; i++) {
+    for (ull i = 0; i < assembler->closureIdx; i++) {
         trueFname = (char *)malloc(sizeof(char) * (strlen(filename) + 25));
         sprintf(trueFname, "%s:fn-%lld", filename, i);
         printf("\n");

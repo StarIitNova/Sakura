@@ -5,9 +5,9 @@
 #include "assembler.h"
 #include "stable.h"
 
-unsigned int sakuraX_hashForTVMap(const char *key, size_t len, size_t capacity) {
+unsigned int sakuraX_hashForTVMap(const char *key, ull len, ull capacity) {
     unsigned int hashValue = 5381;
-    for (size_t i = 0; i < len; i++)
+    for (ull i = 0; i < len; i++)
         hashValue = (hashValue << 5) + hashValue + key[i];
     return hashValue % capacity;
 }
@@ -30,7 +30,7 @@ SakuraState *sakura_createState(void) {
         state->locals = (struct s_str *)malloc(128 * sizeof(struct s_str));
         state->localsSize = 128;
 
-        for (size_t i = 0; i < state->localsSize; i++) {
+        for (ull i = 0; i < state->localsSize; i++) {
             state->locals[i].str = NULL;
             state->locals[i].len = 0;
         }
@@ -47,7 +47,7 @@ SakuraState *sakura_createState(void) {
         state->registry.rdx.tt = SAKURA_TNUMFLT;
         state->registry.rdx.value.n = 0;
 
-        for (size_t i = 0; i < 64; i++) {
+        for (ull i = 0; i < 64; i++) {
             state->registry.args[i].tt = SAKURA_TNUMFLT;
             state->registry.args[i].value.n = 0;
         }
@@ -61,7 +61,7 @@ SakuraState *sakura_createState(void) {
 void sakura_destroyState(SakuraState *state) {
     if (state != NULL) {
         sakuraX_destroyTVMap(&state->globals);
-        for (size_t i = 0; i < state->pool.size; i++) {
+        for (ull i = 0; i < state->pool.size; i++) {
             if (state->pool.constants[i].tt == SAKURA_TSTR)
                 s_str_free(&state->pool.constants[i].value.s);
         }
@@ -72,7 +72,7 @@ void sakura_destroyState(SakuraState *state) {
         state->callStack = NULL;
         state->callStackSize = 0;
         state->callStackIndex = 0;
-        for (size_t i = 0; i < state->localsSize; i++)
+        for (ull i = 0; i < state->localsSize; i++)
             s_str_free(&state->locals[i]);
         free(state->locals);
         state->locals = NULL;
@@ -107,7 +107,7 @@ void sakuraDEBUG_dumpStack(SakuraState *S) {
 
 void sakuraDEBUG_dumpTokens(struct TokenStack *tokens) {
     printf("[Token Dump]: dump:\n");
-    for (size_t i = 0; i < tokens->size; i++) {
+    for (ull i = 0; i < tokens->size; i++) {
         struct Token *token = tokens->tokens[i];
         printf("    [%d]:\t'%.*s'\n", token->type, (int)token->length, token->start);
     }
@@ -122,7 +122,7 @@ void sakuraDEBUG_dumpConstantPool(SakuraConstantPool *pool) {
     }
 
     printf("[Constant Dump]: dump (%p through %p):\n", pool->constants, pool->constants + pool->size);
-    for (size_t i = 0; i < pool->size; i++) {
+    for (ull i = 0; i < pool->size; i++) {
         allocVal = sakuraX_readTVal(&pool->constants[i]);
         printf("  [%lld] %s\n", i, allocVal);
         free(allocVal);
@@ -131,33 +131,33 @@ void sakuraDEBUG_dumpConstantPool(SakuraConstantPool *pool) {
     printf("[Constant Dump]: end dump\n");
 }
 
-void sakuraX_initializeTVMap(struct TVMap *map, size_t initCapacity) {
+void sakuraX_initializeTVMap(struct TVMap *map, ull initCapacity) {
     map->pairs = (struct TVMapPair *)malloc(initCapacity * sizeof(struct TVMapPair));
     map->size = 0;
     map->capacity = initCapacity;
 
-    for (size_t i = 0; i < initCapacity; i++) {
+    for (ull i = 0; i < initCapacity; i++) {
         map->pairs[i].init = 0;
         map->pairs[i].key.str = NULL;
         map->pairs[i].key.len = 0;
     }
 }
 
-void sakuraX_resizeTVMap(struct TVMap *map, size_t newCapacity) {
+void sakuraX_resizeTVMap(struct TVMap *map, ull newCapacity) {
     struct TVMapPair *oldPairs = map->pairs;
-    size_t oldCapacity = map->capacity;
+    ull oldCapacity = map->capacity;
 
     map->pairs = (struct TVMapPair *)malloc(newCapacity * sizeof(struct TVMapPair));
     map->size = 0;
     map->capacity = newCapacity;
 
-    for (size_t i = 0; i < newCapacity; i++) {
+    for (ull i = 0; i < newCapacity; i++) {
         map->pairs[i].init = 0;
         map->pairs[i].key.str = NULL;
         map->pairs[i].key.len = 0;
     }
 
-    for (size_t i = 0; i < oldCapacity; i++) {
+    for (ull i = 0; i < oldCapacity; i++) {
         if (oldPairs[i].init == 1) {
             sakuraX_TVMapInsert(map, &oldPairs[i].key, oldPairs[i].value);
             s_str_free(&oldPairs[i].key); // Free the old key (assuming ownership transfer)
@@ -168,7 +168,7 @@ void sakuraX_resizeTVMap(struct TVMap *map, size_t newCapacity) {
 }
 
 void sakuraX_TVMapInsert(struct TVMap *map, const struct s_str *key, TValue value) {
-    size_t idx;
+    ull idx;
 
     if ((double)map->size / map->capacity >= 0.5) {
         sakuraX_resizeTVMap(map, map->capacity * 2);
@@ -182,22 +182,22 @@ void sakuraX_TVMapInsert(struct TVMap *map, const struct s_str *key, TValue valu
 }
 
 int sakuraX_TVMapGetIndex(struct TVMap *map, const struct s_str *key) {
-    size_t idx = sakuraX_hashForTVMap(key->str, key->len, map->capacity);
+    ull idx = sakuraX_hashForTVMap(key->str, key->len, map->capacity);
     return map->pairs[idx].init == 1 ? (int)idx : -1;
 }
 
 TValue *sakuraX_TVMapGet(struct TVMap *map, const struct s_str *key) {
-    size_t idx = sakuraX_hashForTVMap(key->str, key->len, map->capacity);
+    ull idx = sakuraX_hashForTVMap(key->str, key->len, map->capacity);
     return map->pairs[idx].init == 1 ? &map->pairs[idx].value : NULL;
 }
 
 TValue *sakuraX_TVMapGet_c(struct TVMap *map, const char *key) {
-    size_t idx = sakuraX_hashForTVMap(key, strlen(key), map->capacity);
+    ull idx = sakuraX_hashForTVMap(key, strlen(key), map->capacity);
     return map->pairs[idx].init == 1 ? &map->pairs[idx].value : NULL;
 }
 
 void sakuraX_destroyTVMap(struct TVMap *map) {
-    for (size_t i = 0; i < map->capacity; i++) {
+    for (ull i = 0; i < map->capacity; i++) {
         if (map->pairs[i].init == 0)
             continue;
         s_str_free(&map->pairs[i].key);
@@ -364,7 +364,7 @@ void copyTValue(TValue *dest, TValue *src) {
 void sakuraY_mergePools(SakuraState *S, SakuraConstantPool *pool) {
     S->pool.capacity += pool->capacity;
     S->pool.constants = (TValue *)realloc(S->pool.constants, S->pool.capacity * sizeof(TValue));
-    for (size_t i = 0; i < pool->size; i++)
+    for (ull i = 0; i < pool->size; i++)
         copyTValue(&S->pool.constants[S->pool.size + i], &pool->constants[i]);
     S->pool.size += pool->size;
 }
@@ -372,12 +372,12 @@ void sakuraY_mergePools(SakuraState *S, SakuraConstantPool *pool) {
 void sakuraY_mergePoolsA(SakuraConstantPool *into, SakuraConstantPool *from) {
     into->capacity += from->capacity;
     into->constants = (TValue *)realloc(into->constants, into->capacity * sizeof(TValue));
-    for (size_t i = 0; i < from->size; i++)
+    for (ull i = 0; i < from->size; i++)
         copyTValue(&into->constants[into->size + i], &from->constants[i]);
     into->size += from->size;
 }
 
-unsigned int sakuraX_hashTValue(const TValue *key, size_t capacity) {
+unsigned int sakuraX_hashTValue(const TValue *key, ull capacity) {
     unsigned int hashValue = 0;
     hashValue ^= key->tt;
 

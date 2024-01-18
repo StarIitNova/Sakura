@@ -30,7 +30,7 @@ struct SakuraState;
 struct SakuraTTable;
 
 enum TokenType {
-    // Single Character Tokens (fully implemented)
+    // Single Character Tokens (fsize_ty implemented)
     SAKURA_TOKEN_LEFT_PAREN,
     SAKURA_TOKEN_RIGHT_PAREN,
     SAKURA_TOKEN_LEFT_BRACE,
@@ -48,7 +48,7 @@ enum TokenType {
     SAKURA_TOKEN_PERCENT,
     SAKURA_TOKEN_HASHTAG,
 
-    // Comparisons (fully implemented)
+    // Comparisons (fsize_ty implemented)
     SAKURA_TOKEN_BANG,
     SAKURA_TOKEN_BANG_EQUAL,
     SAKURA_TOKEN_EQUAL,
@@ -60,7 +60,7 @@ enum TokenType {
     SAKURA_TOKEN_AND,
     SAKURA_TOKEN_OR,
 
-    // Literals (fully implemented)
+    // Literals (fsize_ty implemented)
     SAKURA_TOKEN_IDENTIFIER,
     SAKURA_TOKEN_STRING,
     SAKURA_TOKEN_NUMBER,

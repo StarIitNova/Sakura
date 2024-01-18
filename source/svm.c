@@ -41,7 +41,7 @@ int sakuraX_interpretA(SakuraState *S, struct SakuraAssembly *assembly, int offs
 
     preStackIdx = S->stackIndex;
     instructions = assembly->instructions;
-    for (size_t i = 0; i < assembly->size; i++) {
+    for (ull i = 0; i < assembly->size; i++) {
         switch (instructions[i]) {
         case SAKURA_LOADK:
             // ignore the first argument (store reg) as it is NOT needed
