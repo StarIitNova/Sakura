@@ -26,7 +26,7 @@ struct NodeStack *sakuraY_parse(SakuraState *S, struct TokenStack *tokens);
 void sakuraY_freeToken(struct Token *token);
 void sakuraY_freeNode(struct Node *node);
 
-struct Node *sakuraX_parseUnary(SakuraState *, struct Token *token, struct Node *left);
+struct Node *sakuraX_parseUnary(SakuraState *S, struct Token *token, struct Node *left);
 struct Node *sakuraX_binaryOperation(SakuraState *S, struct TokenStack *tokens, enum TokenType types[],
                                      struct Node *(*fn)(SakuraState *, struct TokenStack *));
 struct Node *sakuraX_parseFactor(SakuraState *S, struct TokenStack *tokens);

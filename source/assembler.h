@@ -10,16 +10,16 @@
 struct SakuraAssembly {
     int *instructions;
     SakuraConstantPool pool;
-    size_t size;
-    size_t capacity;
-    size_t registers;
+    ull size;
+    ull capacity;
+    ull registers;
 
     struct SakuraAssembly **closures;
-    size_t closureCapacity;
-    size_t closureIdx;
+    ull closureCapacity;
+    ull closureIdx;
 
-    size_t highestRegister;
-    size_t functionsLoaded;
+    ull highestRegister;
+    ull functionsLoaded;
 };
 
 // assembly instructions
@@ -54,9 +54,9 @@ struct SakuraAssembly {
 #define SAKURA_UNM 16 // unm a, b -> negates the value at index b and stores it in a
 
 // Comparisonn & Logical Operations
-#define SAKURA_EQ 18 // eq a, b, c -> checks if the values at index b and c are equal and stores it in a
-#define SAKURA_LT 19 // lt a, b, c -> checks if index b is less than the value at index c and stores it in a
-#define SAKURA_LE 20 // le a, b, c -> checks if index b is less than or equal to the value at index c and stores it in a
+#define SAKURA_EQ 18  // eq a, b, c -> checks if the values at index b and c are equal and stores it in a
+#define SAKURA_LT 19  // lt a, b, c -> checks if index b is less than the value at index c and stores it in a
+#define SAKURA_LE 20  // le a, b, c -> checks if index b is less than or equal to the value at index c and stores it in a
 #define SAKURA_NOT 21 // not a, b -> inverts the bool at b and stores it in a
 
 // Control Flow
@@ -86,10 +86,11 @@ void sakuraV_visitBlock(SakuraState *S, struct SakuraAssembly *assembly, struct 
 void sakuraV_visitUnary(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node);
 void sakuraV_visitBinary(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node);
 void sakuraV_visitCall(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node);
+void sakuraV_visitIndex(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node);
 void sakuraV_visitFunction(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node);
 void sakuraV_visitIf(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node);
-void sakuraV_visitString(SakuraState *, struct SakuraAssembly *assembly, struct Node *node);
-void sakuraV_visitNumber(SakuraState *, struct SakuraAssembly *assembly, struct Node *node);
+void sakuraV_visitString(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node);
+void sakuraV_visitNumber(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node);
 void sakuraV_visitIdentifier(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node);
 void sakuraV_visitWhile(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node);
 void sakuraV_visitVar(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node);

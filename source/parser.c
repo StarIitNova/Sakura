@@ -44,7 +44,7 @@ void sakuraX_freeTokStack(struct TokenStack *stack) {
         return;
 
     if (stack->size > 0) {
-        for (size_t i = 0; i < stack->size; i++) {
+        for (ull i = 0; i < stack->size; i++) {
             sakuraY_freeToken(stack->tokens[i]);
         }
     }
@@ -70,7 +70,7 @@ struct Token *sakuraX_popTokStack(struct TokenStack *stack) {
     }
 
     token = stack->tokens[0];
-    for (size_t i = 0; i < stack->size - 1; i++)
+    for (ull i = 0; i < stack->size - 1; i++)
         stack->tokens[i] = stack->tokens[i + 1];
 
     stack->size--;
@@ -102,7 +102,7 @@ void sakuraX_freeNodeStack(struct NodeStack *stack) {
         return;
 
     if (stack->size > 0) {
-        for (size_t i = 0; i < stack->size; i++) {
+        for (ull i = 0; i < stack->size; i++) {
             sakuraY_freeNode(stack->nodes[i]);
         }
     }
@@ -127,7 +127,7 @@ struct Node *sakuraX_popNodeStack(struct NodeStack *stack) {
     }
 
     node = stack->nodes[0];
-    for (size_t i = 0; i < stack->size - 1; i++) {
+    for (ull i = 0; i < stack->size - 1; i++) {
         stack->nodes[i] = stack->nodes[i + 1];
     }
 
@@ -307,8 +307,10 @@ struct TokenStack *sakuraY_analyze(SakuraState *S, struct s_str *source) {
     return stack;
 }
 
-struct Node *sakuraX_parseUnary(SakuraState *, struct Token *token, struct Node *left) {
+struct Node *sakuraX_parseUnary(SakuraState *S, struct Token *token, struct Node *left) {
     struct Node *node;
+
+    UNUSED(S);
 
     LOG_CALL();
 
@@ -347,7 +349,7 @@ struct Node *sakuraX_binaryOperation(SakuraState *S, struct TokenStack *tokens, 
             break;
 
         hasType = 0;
-        for (size_t i = 0; types[i] != SAKURA_TOKEN_SENTINEL; i++) {
+        for (ull i = 0; types[i] != SAKURA_TOKEN_SENTINEL; i++) {
             if (token->type == types[i]) {
                 if (sakuraX_popTokStack(tokens) == NULL) {
                     S->error = SAKURA_EFLAG_SYNTAX;
@@ -592,8 +594,8 @@ struct Node *sakuraX_parseExpression(SakuraState *S, struct TokenStack *tokens) 
 }
 
 struct Node *sakuraX_parseComparisons(SakuraState *S, struct TokenStack *tokens) {
-    enum TokenType ops[] = {SAKURA_TOKEN_EQUAL_EQUAL,   SAKURA_TOKEN_BANG_EQUAL, SAKURA_TOKEN_GREATER,
-                            SAKURA_TOKEN_GREATER_EQUAL, SAKURA_TOKEN_LESS,       SAKURA_TOKEN_LESS_EQUAL,
+    enum TokenType ops[] = {SAKURA_TOKEN_EQUAL_EQUAL, SAKURA_TOKEN_BANG_EQUAL, SAKURA_TOKEN_GREATER,
+                            SAKURA_TOKEN_GREATER_EQUAL, SAKURA_TOKEN_LESS, SAKURA_TOKEN_LESS_EQUAL,
                             SAKURA_TOKEN_SENTINEL};
     struct Node *node;
     LOG_CALL();
@@ -1067,7 +1069,7 @@ void sakuraY_freeNode(struct Node *node) {
 
     if (node->args != NULL) {
         if (node->argCount > 0) {
-            for (size_t i = 0; i < node->argCount; i++) {
+            for (ull i = 0; i < node->argCount; i++) {
                 sakuraY_freeNode(node->args[i]);
             }
         }

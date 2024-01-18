@@ -100,9 +100,11 @@ void sakuraV_visitBinary(SakuraState *S, struct SakuraAssembly *assembly, struct
     LOG_POP();
 }
 
-void sakuraV_visitNumber(SakuraState *, struct SakuraAssembly *assembly, struct Node *node) {
+void sakuraV_visitNumber(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node) {
     int index;
-    size_t reg;
+    ull reg;
+
+    UNUSED(S);
 
     LOG_CALL();
 
@@ -122,10 +124,12 @@ void sakuraV_visitNumber(SakuraState *, struct SakuraAssembly *assembly, struct 
     LOG_POP();
 }
 
-void sakuraV_visitString(SakuraState *, struct SakuraAssembly *assembly, struct Node *node) {
+void sakuraV_visitString(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node) {
     int index;
-    size_t reg;
+    ull reg;
     struct s_str val;
+
+    UNUSED(S);
 
     LOG_CALL();
 
@@ -149,7 +153,7 @@ void sakuraV_visitString(SakuraState *, struct SakuraAssembly *assembly, struct 
 void sakuraV_visitIdentifier(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node) {
     struct s_str name;
     int idx;
-    size_t reg;
+    ull reg;
 
     LOG_CALL();
 
@@ -173,7 +177,7 @@ void sakuraV_visitIdentifier(SakuraState *S, struct SakuraAssembly *assembly, st
         }
     } else {
         // check the locals table (user created variable)
-        for (size_t i = 0; i < S->localsSize; i++) {
+        for (ull i = 0; i < S->localsSize; i++) {
             if (s_str_cmp(&name, &S->locals[i]) == 0) {
                 // load the value into the next register
                 reg = assembly->registers++;
@@ -197,7 +201,7 @@ void sakuraV_visitIdentifier(SakuraState *S, struct SakuraAssembly *assembly, st
 void sakuraV_visitFunction(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node) {
     struct SakuraAssembly *funcAssembly;
     struct s_str v;
-    size_t reg;
+    ull reg;
     int idx;
 
     LOG_CALL();
@@ -241,7 +245,7 @@ void sakuraV_visitCall(SakuraState *S, struct SakuraAssembly *assembly, struct N
     struct s_str name;
     TValue *func;
     int idx;
-    size_t reg;
+    ull reg;
 
     LOG_CALL();
 
@@ -255,7 +259,7 @@ void sakuraV_visitCall(SakuraState *S, struct SakuraAssembly *assembly, struct N
         idx = sakuraX_TVMapGetIndex(&S->globals, &name);
 
         if (idx == -1) {
-            for (size_t i = 0; i < S->localsSize; i++) {
+            for (ull i = 0; i < S->localsSize; i++) {
                 if (s_str_cmp(&name, &S->locals[i]) == 0) {
                     // load the value into the next register
                     reg = assembly->registers++;
@@ -267,7 +271,7 @@ void sakuraV_visitCall(SakuraState *S, struct SakuraAssembly *assembly, struct N
                         assembly->highestRegister = reg;
                     }
 
-                    for (size_t j = 0; j < node->argCount; j++) {
+                    for (ull j = 0; j < node->argCount; j++) {
                         sakuraV_visitNode(S, assembly, node->args[j]);
                     }
 
@@ -304,7 +308,7 @@ void sakuraV_visitCall(SakuraState *S, struct SakuraAssembly *assembly, struct N
         }
 
         // bytecode to push arguments onto the stack
-        for (size_t i = 0; i < node->argCount; i++) {
+        for (ull i = 0; i < node->argCount; i++) {
             sakuraV_visitNode(S, assembly, node->args[i]);
         }
 
@@ -317,7 +321,7 @@ void sakuraV_visitCall(SakuraState *S, struct SakuraAssembly *assembly, struct N
         sakuraV_visitNode(S, assembly, node->left);
 
         // bytecode to push arguments onto the stack
-        for (size_t i = 0; i < node->argCount; i++) {
+        for (ull i = 0; i < node->argCount; i++) {
             sakuraV_visitNode(S, assembly, node->args[i]);
         }
 
@@ -329,8 +333,12 @@ void sakuraV_visitCall(SakuraState *S, struct SakuraAssembly *assembly, struct N
     LOG_POP();
 }
 
+void sakuraV_visitIndex(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node) {
+    ;
+}
+
 void sakuraV_visitIf(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node) {
-    size_t jump, end;
+    ull jump, end;
 
     LOG_CALL();
 
@@ -368,8 +376,8 @@ void sakuraV_visitIf(SakuraState *S, struct SakuraAssembly *assembly, struct Nod
 }
 
 void sakuraV_visitWhile(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node) {
-    size_t start = assembly->size;
-    size_t jump = 0;
+    ull start = assembly->size;
+    ull jump = 0;
 
     LOG_CALL();
 
@@ -399,7 +407,7 @@ void sakuraV_visitWhile(SakuraState *S, struct SakuraAssembly *assembly, struct 
 void sakuraV_visitBlock(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node) {
     LOG_CALL();
 
-    for (size_t i = 0; i < node->argCount; i++) {
+    for (ull i = 0; i < node->argCount; i++) {
         sakuraV_visitNode(S, assembly, node->args[i]);
     }
 
@@ -408,7 +416,7 @@ void sakuraV_visitBlock(SakuraState *S, struct SakuraAssembly *assembly, struct 
 
 void sakuraV_visitVar(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node) {
     struct s_str name;
-    size_t reg;
+    ull reg;
 
     LOG_CALL();
 
@@ -428,7 +436,7 @@ void sakuraV_visitVar(SakuraState *S, struct SakuraAssembly *assembly, struct No
 }
 
 void sakuraV_visitTable(SakuraState *S, struct SakuraAssembly *assembly, struct Node *node) {
-    size_t reg, tblIdx, keyIdx = 0;
+    ull reg, tblIdx, keyIdx = 0;
     int index;
 
     LOG_CALL();
@@ -445,7 +453,7 @@ void sakuraV_visitTable(SakuraState *S, struct SakuraAssembly *assembly, struct 
     }
 
     // bytecode to set the table keys
-    for (size_t i = 0; i < node->argCount; i++) {
+    for (ull i = 0; i < node->argCount; i++) {
         if (node->keys[i] == NULL) {
             tblIdx = keyIdx++;
             // push idx as a constant and use that
@@ -522,7 +530,7 @@ struct SakuraAssembly *sakuraY_assemble(SakuraState *S, struct NodeStack *nodes)
     S->currentState = SAKURA_FLAG_ASSEMBLING;
     assembly = SakuraAssembly();
 
-    for (size_t i = 0; i < nodes->size; i++) {
+    for (ull i = 0; i < nodes->size; i++) {
         node = nodes->nodes[i];
         sakuraV_visitNode(S, assembly, node);
     }
@@ -564,7 +572,7 @@ void sakuraX_freeAssembly(struct SakuraAssembly *assembly) {
     LOG_CALL();
 
     if (assembly->pool.constants) {
-        for (size_t i = 0; i < assembly->pool.size; i++) {
+        for (ull i = 0; i < assembly->pool.size; i++) {
             if (assembly->pool.constants[i].tt == SAKURA_TSTR)
                 s_str_free(&assembly->pool.constants[i].value.s);
         }
@@ -580,7 +588,7 @@ void sakuraX_freeAssembly(struct SakuraAssembly *assembly) {
     }
 
     if (assembly->closures) {
-        for (size_t i = 0; i < assembly->closureIdx; i++)
+        for (ull i = 0; i < assembly->closureIdx; i++)
             sakuraX_freeAssembly(assembly->closures[i]);
         free(assembly->closures);
         assembly->closures = NULL;
@@ -615,7 +623,7 @@ void SakuraAssembly_push4(struct SakuraAssembly *assembly, int instruction, int 
 }
 
 int sakuraX_pushKNumber(struct SakuraAssembly *assembly, double value) {
-    size_t idx;
+    ull idx;
 
     if (assembly->pool.size >= assembly->pool.capacity) {
         assembly->pool.capacity *= 2;
@@ -629,7 +637,7 @@ int sakuraX_pushKNumber(struct SakuraAssembly *assembly, double value) {
 }
 
 int sakuraX_pushKString(struct SakuraAssembly *assembly, const struct s_str *value) {
-    size_t idx;
+    ull idx;
 
     if (assembly->pool.size >= assembly->pool.capacity) {
         assembly->pool.capacity *= 2;
